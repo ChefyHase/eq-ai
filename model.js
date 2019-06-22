@@ -19,7 +19,13 @@ class Model {
     const pooling1 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm1);
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pooling1);
 
-    const flatten = tf.layers.flatten().apply(dropout1);
+    const conv2 = tf.layers.conv2d({ filters: 64, kernelSize: [1024, 1], strides: 8, padding: 'same' }).apply(dropout1);
+    const activ2 = tf.layers.reLU().apply(conv2);
+    const norm2 = tf.layers.batchNormalization().apply(activ2);
+    const pooling2 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm2);
+    const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pooling2);
+
+    const flatten = tf.layers.flatten().apply(dropout2);
 
     const dense1 = tf.layers.dense({ units: 25 }).apply(flatten);
     const activDense1 = tf.layers.reLU().apply(dense1);
@@ -39,12 +45,12 @@ class Model {
     const optimizer = tf.train.adam(0.0001);
     this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError', metrics: ['accuracy'] });
 
-    for (let i = 0; i < config.trainEpoches; ++i) {
+    for (let i = 0; i < 1; ++i) {
       const { xs, ys } = this.data.nextBatch();
 
       const h = await this.model.fit(xs, ys, {
         batchSize: 500,
-        epochs: 10,
+        epochs: 50,
         shuffle: true,
         validationSplit: 0.4
       });

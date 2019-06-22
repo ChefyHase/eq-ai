@@ -9,11 +9,11 @@ class Model {
   }
 
   build() {
-    const droprate = 0.5;
+    const droprate = 0.1;
     const input = tf.input({ shape: [2048] });
     const reshape = tf.layers.reshape({ targetShape: [64, 32, 1] }).apply(input);
 
-    const conv1 = tf.layers.conv2d({ filters: 128, kernelSize: 10, strides: 2, padding: 'same' }).apply(reshape);
+    const conv1 = tf.layers.conv2d({ filters: 128, kernelSize: 10, strides: 4, padding: 'same' }).apply(reshape);
     const activ1 = tf.layers.activation('relu').apply(conv1);
     const norm1 = tf.layers.batchNormalization().apply(activ1);
     const pooling1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm1);
@@ -52,7 +52,7 @@ class Model {
     console.log('model build: done');
 
     const optimizer = tf.train.adam(0.0001);
-    this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError', metrics: ['accuracy'] });
+    this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError' });
 
     for (let i = 0; i < config.trainEpoches; ++i) {
       const { xs, ys } = this.data.nextBatch();
@@ -79,6 +79,8 @@ class Model {
     const model = await tf.loadLayersModel('file://./mastering-ai/model.json');
     const predictBatch = await this.data.predictBatch(wav);
     const prediction = model.predict(predictBatch);
+
+    prediction.print()
 
     const mean = prediction.mean(0).dataSync();
     const freq = this.data.invNorm(mean[0], 20, 20000);

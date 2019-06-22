@@ -9,7 +9,7 @@ class Model {
   }
 
   build() {
-    const droprate = 0.5;
+    const droprate = 0.2;
     const input = tf.input({ shape: [2048] });
     const reshape = tf.layers.reshape({ targetShape: [64, 32, 1] }).apply(input);
 

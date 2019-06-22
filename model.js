@@ -9,7 +9,7 @@ class Model {
   }
 
   build() {
-    const droprate = 0.0;
+    const droprate = 0.5;
     const input = tf.input({ shape: [2048] });
     const reshape = tf.layers.reshape({ targetShape: [64, 32, 1] }).apply(input);
 
@@ -58,8 +58,8 @@ class Model {
       const { xs, ys } = this.data.nextBatch();
 
       const h = await this.model.fit(xs, ys, {
-        batchSize: 100,
-        epochs: 25,
+        batchSize: 200,
+        epochs: 10,
         shuffle: true,
         validationSplit: 0.3
       });

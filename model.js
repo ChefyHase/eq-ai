@@ -30,10 +30,13 @@ class Model {
     const dense1 = tf.layers.dense({ units: 1000 }).apply(flatten);
     const activDense1 = tf.layers.activation('relu').apply(dense1);
 
-    const dense2 = tf.layers.dense({ units: 128 }).apply(activDense1);
+    const dense2 = tf.layers.dense({ units: 500 }).apply(activDense1);
     const activDense2 = tf.layers.activation('relu').apply(dense2);
 
-    const denseOutput = tf.layers.dense({ units: 3 }).apply(activDense2);
+    const dense3 = tf.layers.dense({ units: 100 }).apply(activDense2);
+    const activDense3 = tf.layers.activation('relu').apply(dense3);
+
+    const denseOutput = tf.layers.dense({ units: 3 }).apply(activDense3);
     const activOutput = tf.layers.activation('relu').apply(denseOutput);
 
     const model = tf.model({ inputs: input, outputs: activOutput });

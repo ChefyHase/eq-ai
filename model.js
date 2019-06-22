@@ -51,12 +51,12 @@ class Model {
     const optimizer = tf.train.adam(0.0001);
     this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError', metrics: ['accuracy'] });
 
-    for (let i = 0; i < 1; ++i) {
+    for (let i = 0; i < config.trainEpoches; ++i) {
       const { xs, ys } = this.data.nextBatch();
 
       const h = await this.model.fit(xs, ys, {
         batchSize: 100,
-        epochs: 100,
+        epochs: 25,
         shuffle: true,
         validationSplit: 0.3
       });

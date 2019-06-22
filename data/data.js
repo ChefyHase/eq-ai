@@ -31,9 +31,15 @@ class Data {
     return params;
   }
 
-  async separateSound(soundPath, chunnel = 0) {
-    const soundFilaPeth = path.resolve(soundPath);
-    let soundBuffer = await decoder.decode(fs.readFileSync(soundFilaPeth));
+  async separateSound(sound, chunnel = 0) {
+    let soundBuffer;
+    if (typeof sound === 'object') {
+      soundBuffer = sound;
+    }
+    else {
+      const soundFilaPeth = path.resolve(soundPath);
+      soundBuffer = await decoder.decode(fs.readFileSync(soundFilaPeth));
+    }
     soundBuffer = soundBuffer.channelData[chunnel];
 
     const shortTimeSounds = _.chunk(soundBuffer, this.shortTimeSamples);
@@ -64,13 +70,24 @@ class Data {
     }
   }
 
-  applyFilter() {
-    for (let i = 0; i < this.sounds.length; i++) {
-      const filterParam = this.randomFilterParam();
-      const filtered = peaking.peaking(this.sounds[i], filterParam);
+  async applyFilter(data = null, param = null) {
+    if (data && param) {
+      const filterParam = param;
+      const separated = await this.separateSound(data);
+      const filtered = [];
+      for (let buffer of separated) {
+        filtered.push(...peaking.peaking(buffer, filterParam))
+      }
+      return filtered;
+    }
+    else {
+      for (let i = 0; i < this.sounds.length; i++) {
+        const filterParam = this.randomFilterParam();
+        const filtered = peaking.peaking(this.sounds[i], filterParam);
 
-      this.sounds[i] = filtered;
-      this.filterParams.push(filterParam);
+        this.sounds[i] = filtered;
+        this.filterParams.push(filterParam);
+      }
     }
   }
 

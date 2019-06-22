@@ -82,10 +82,10 @@ class Data {
       for (let i = 0; i < config.batchSize; i++) {
         xBatch.push(Array(...this.sounds[i]));
         labelBatch.push([
-          this.filterParams[i].freq / 20000,
-          this.filterParams[i].q / 5.0,
-          this.filterParams[i].gain / 15.0,
-          this.filterParams[i].bw / 5.0
+          this.filterParams[i].freq,
+          this.filterParams[i].q,
+          this.filterParams[i].gain,
+          this.filterParams[i].bw
         ]);
       }
       this.dataSets.push([xBatch, labelBatch]);

@@ -39,7 +39,10 @@ class Model {
 
     const flatten = tf.layers.flatten().apply(dropout4);
 
-    const denseOutput = tf.layers.dense({ units: 4 }).apply(flatten);
+    const dense1 = tf.layers.dense({ units: 25 }).apply(flatten);
+    const activDense1 = tf.layers.leakyReLU().apply(dense1);
+
+    const denseOutput = tf.layers.dense({ units: 4 }).apply(activDense1);
     const activOutput = tf.layers.leakyReLU().apply(denseOutput);
 
     const model = tf.model({ inputs: input, outputs: activOutput });

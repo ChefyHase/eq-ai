@@ -69,25 +69,20 @@ class Model {
 
       xs.dispose();
       ys.dispose();
-
-      // let buffer = await data.separateSound(__dirname + '/test.wav');
-      // let xs = data.fft(tf.tensor(buffer));
     }
   }
 
   async predict(wav) {
-    const model = await tf.loadLayersModel('file://./mastering-ai/model.json');
+    const model = await tf.loadLayersModel(`file://${__dirname}/mastering-ai/model.json`);
     const predictBatch = await this.data.predictBatch(wav);
     const prediction = model.predict(predictBatch);
-
     prediction.print()
-
     const mean = prediction.mean(0).dataSync();
     const freq = this.data.invNorm(mean[0], 20, 20000);
     const gain = this.data.invNorm(mean[1], -15.0, 15.0);
     const q = this.data.invNorm(mean[2], 0.1, 24.0);
 
-    console.log(freq, q, gain);
+    return { freq, gain, q };
   }
 }
 

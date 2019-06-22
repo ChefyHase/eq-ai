@@ -56,7 +56,6 @@ class Model {
 
     for (let i = 0; i < config.trainEpoches; ++i) {
       const { xs, ys } = this.data.nextBatch();
-      ys.print()
 
       const h = await this.model.fit(xs, ys, {
         batchSize: 100,
@@ -84,7 +83,7 @@ class Model {
     const mean = prediction.mean(0).dataSync();
     const freq = this.data.invNorm(mean[0], 20, 20000);
     const gain = this.data.invNorm(mean[1], -15.0, 15.0);
-    const q = this.data.bw2q(this.data.invNorm(mean[2], 0, 5.0), freq);
+    const q = this.data.invNorm(mean[2], 0.1, 24.0);
 
     console.log(freq, q, gain);
   }

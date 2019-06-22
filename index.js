@@ -4,4 +4,5 @@ const tf = require('@tensorflow/tfjs-node-gpu');
 
 (async ()=> {
   await model.train();
+  await model.predict('./Mixdown.wav');
 })();

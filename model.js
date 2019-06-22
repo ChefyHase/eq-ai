@@ -13,25 +13,25 @@ class Model {
     const input = tf.input({ shape: [2048] });
     const reshape = tf.layers.reshape({ targetShape: [2048, 1, 1] }).apply(input);
 
-    const conv1 = tf.layers.conv2d({ filters: 32, kernelSize: [512, 1], strides: 4, padding: 'same' }).apply(reshape);
+    const conv1 = tf.layers.conv2d({ filters: 32, kernelSize: [1024, 1], strides: 8, padding: 'same' }).apply(reshape);
     const activ1 = tf.layers.leakyReLU().apply(conv1);
     const norm1 = tf.layers.batchNormalization().apply(activ1);
     const pooling1 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm1);
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pooling1);
 
-    const conv2 = tf.layers.conv2d({ filters: 8, kernelSize: [64, 1], strides: 1, padding: 'same' }).apply(dropout1);
+    const conv2 = tf.layers.conv2d({ filters: 8, kernelSize: [512, 1], strides: 1, padding: 'same' }).apply(dropout1);
     const activ2 = tf.layers.leakyReLU().apply(conv2);
     const norm2 = tf.layers.batchNormalization().apply(activ2);
     const pooling2 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm2);
     const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pooling2);
 
-    const conv3 = tf.layers.conv2d({ filters: 8, kernelSize: [64, 1], strides: 1, padding: 'same' }).apply(dropout2);
+    const conv3 = tf.layers.conv2d({ filters: 8, kernelSize: [512, 1], strides: 1, padding: 'same' }).apply(dropout2);
     const activ3 = tf.layers.leakyReLU().apply(conv3);
     const norm3 = tf.layers.batchNormalization().apply(activ3);
     const pooling3 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm3);
     const dropout3 = tf.layers.dropout({ rate: droprate }).apply(pooling3);
 
-    const conv4 = tf.layers.conv2d({ filters: 2, kernelSize: [64, 1], strides: 1, padding: 'same' }).apply(dropout3);
+    const conv4 = tf.layers.conv2d({ filters: 2, kernelSize: [512, 1], strides: 1, padding: 'same' }).apply(dropout3);
     const activ4 = tf.layers.leakyReLU().apply(conv4);
     const norm4 = tf.layers.batchNormalization().apply(activ4);
     const pooling4 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm4);

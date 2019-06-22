@@ -14,13 +14,13 @@ class Model {
     const reshape = tf.layers.reshape({ targetShape: [64, 32, 1] }).apply(input);
 
     const conv1 = tf.layers.conv2d({ filters: 128, kernelSize: 10, strides: 2, padding: 'same' }).apply(reshape);
-    const activ1 = tf.layers.reLU().apply(conv1);
+    const activ1 = tf.layers.activation('relu').apply(conv1);
     const norm1 = tf.layers.batchNormalization().apply(activ1);
     const pooling1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm1);
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pooling1);
 
     const conv2 = tf.layers.conv2d({ filters: 64, kernelSize: 5, strides: 2, padding: 'same' }).apply(dropout1);
-    const activ2 = tf.layers.reLU().apply(conv2);
+    const activ2 = tf.layers.activation('relu').apply(conv2);
     const norm2 = tf.layers.batchNormalization().apply(activ2);
     const pooling2 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm2);
     const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pooling2);
@@ -28,19 +28,19 @@ class Model {
     const flatten = tf.layers.flatten().apply(dropout2);
 
     const dense1 = tf.layers.dense({ units: 128 }).apply(flatten);
-    const activDense1 = tf.layers.reLU().apply(dense1);
+    const activDense1 = tf.layers.activation('relu').apply(dense1);
 
     const dense2 = tf.layers.dense({ units: 64 }).apply(activDense1);
-    const activDense2 = tf.layers.reLU().apply(dense2);
+    const activDense2 = tf.layers.activation('relu').apply(dense2);
 
     const dense3 = tf.layers.dense({ units: 32 }).apply(activDense2);
-    const activDense3 = tf.layers.reLU().apply(dense3);
+    const activDense3 = tf.layers.activation('relu').apply(dense3);
 
     const dense4 = tf.layers.dense({ units: 10 }).apply(activDense3);
-    const activDense4 = tf.layers.reLU().apply(dense4);
+    const activDense4 = tf.layers.activation('relu').apply(dense4);
 
     const denseOutput = tf.layers.dense({ units: 4 }).apply(activDense4);
-    const activOutput = tf.layers.reLU().apply(denseOutput);
+    const activOutput = tf.layers.activation('sigmoid').apply(denseOutput);
 
     const model = tf.model({ inputs: input, outputs: activOutput });
     model.summary();
@@ -52,7 +52,7 @@ class Model {
     console.log('model build: done');
 
     const optimizer = tf.train.adam(0.0001);
-    this.model.compile({ optimizer: optimizer, loss: 'binaryCrossentropy', metrics: ['accuracy'] });
+    this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError', metrics: ['accuracy'] });
 
     for (let i = 0; i < config.trainEpoches; ++i) {
       const { xs, ys } = this.data.nextBatch();

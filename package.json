@@ -16,7 +16,6 @@
   "author": "ChefyHase <chefyhase@gmail.com> (http://chefyhase.example.com)",
   "license": "ISC",
   "dependencies": {
-    "@tensorflow/tfjs-node": "^1.1.2",
     "@tensorflow/tfjs-node-gpu": "latest",
     "jest": "^24.8.0",
     "lodash": "^4.17.11",

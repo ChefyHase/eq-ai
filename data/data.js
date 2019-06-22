@@ -24,9 +24,8 @@ class Data {
   randomFilterParam() {
     const params = {
       freq: _.random(20, 20000),
-      q: _.random(0, 5.0, true),
+      q: _.random(0.1, 24.0, true),
       gain: _.random(-15.0, 15.0, true),
-      bw: _.random(0, 5.0, true),
       samplerate: this.samplerate
     }
     return params;
@@ -82,10 +81,9 @@ class Data {
       for (let i = 0; i < config.batchSize; i++) {
         xBatch.push(Array(...this.sounds[i]));
         labelBatch.push([
-          this.filterParams[i].freq / 20000,
-          this.filterParams[i].q / 5.0,
-          this.filterParams[i].gain / 15.0,
-          this.filterParams[i].bw / 5.0
+          this.norm(this.filterParams[i].freq, 20, 20000),
+          this.norm(this.filterParams[i].gain, -15.0, 15.0),
+          this.norm(this.filterParams[i].q, 0.1, 24.0)
         ]);
       }
       this.dataSets.push([xBatch, labelBatch]);
@@ -101,6 +99,12 @@ class Data {
     }
   }
 
+  async predictBatch(wav) {
+    const buffer = await this.separateSound(wav);
+    const ts = tf.tensor(buffer);
+    return ts;
+  }
+
   loadDataset(index) {
     const filePath = config.dataSetPath + index + '.json';
     let json = JSON.parse(fs.readFileSync(filePath));
@@ -111,6 +115,14 @@ class Data {
     tensors.forEach((elem) => {
       elem.dispose();
     });
+  }
+
+  norm(x, min, max) {
+    return (x - min) / (max - min);
+  }
+
+  invNorm(y, min, max) {
+    return y * (max - min) + min
   }
 }
 

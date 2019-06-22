@@ -19,7 +19,7 @@ class Model {
     const pooling1 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm1);
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pooling1);
 
-    const conv2 = tf.layers.conv2d({ filters: 64, kernelSize: [1024, 1], strides: 8, padding: 'same' }).apply(dropout1);
+    const conv2 = tf.layers.conv2d({ filters: 32, kernelSize: [1024, 1], strides: 8, padding: 'same' }).apply(dropout1);
     const activ2 = tf.layers.reLU().apply(conv2);
     const norm2 = tf.layers.batchNormalization().apply(activ2);
     const pooling2 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm2);

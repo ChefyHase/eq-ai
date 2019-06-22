@@ -22,14 +22,23 @@ class Data {
   }
 
   randomFilterParam() {
+    const freq = _.random(20, 20000);
     const params = {
-      freq: _.random(20, 20000),
-      q: _.random(0.1, 24.0, true),
+      freq: freq,
+      q: 0,
       gain: _.random(-15.0, 15.0, true),
-      bw: _.random(0, 5.0, true),
+      bw: this.q2bw(_.random(0.1, 24.0, true), freq),
       samplerate: this.samplerate
     }
     return params;
+  }
+
+  q2bw(q, f0) {
+    return f0 / q;
+  }
+
+  bw2q(bw, f0) {
+    return q / f0;
   }
 
   async separateSound(soundPath, chunnel = 0) {
@@ -83,9 +92,8 @@ class Data {
         xBatch.push(Array(...this.sounds[i]));
         labelBatch.push([
           this.norm(this.filterParams[i].freq, 20, 20000),
-          this.norm(this.filterParams[i].q, 0, 5.0),
           this.norm(this.filterParams[i].gain, -15.0, 15.0),
-          this.norm(this.filterParams[i].bw, 0.0, 5.0)
+          this.norm(this.filterParams[i].bw, 20 / 24, 20000 / 0.1)
         ]);
       }
       this.dataSets.push([xBatch, labelBatch]);

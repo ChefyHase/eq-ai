@@ -9,17 +9,17 @@ class Model {
   }
 
   build() {
-    const droprate = 0.1;
+    const droprate = 0.0;
     const input = tf.input({ shape: [2048] });
     const reshape = tf.layers.reshape({ targetShape: [64, 32, 1] }).apply(input);
 
-    const conv1 = tf.layers.conv2d({ filters: 128, kernelSize: 10, strides: 2, padding: 'same' }).apply(reshape);
+    const conv1 = tf.layers.conv2d({ filters: 128, kernelSize: 10, strides: 2, padding: 'same', kernelInitializer: 'heNormal' }).apply(reshape);
     const activ1 = tf.layers.activation('relu').apply(conv1);
     const norm1 = tf.layers.batchNormalization().apply(activ1);
     const pooling1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm1);
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pooling1);
 
-    const conv2 = tf.layers.conv2d({ filters: 64, kernelSize: 5, strides: 2, padding: 'same' }).apply(dropout1);
+    const conv2 = tf.layers.conv2d({ filters: 64, kernelSize: 5, strides: 2, padding: 'same', kernelInitializer: 'heNormal' }).apply(dropout1);
     const activ2 = tf.layers.activation('relu').apply(conv2);
     const norm2 = tf.layers.batchNormalization().apply(activ2);
     const pooling2 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm2);
@@ -27,20 +27,20 @@ class Model {
 
     const flatten = tf.layers.flatten().apply(dropout2);
 
-    const dense1 = tf.layers.dense({ units: 128 }).apply(flatten);
+    const dense1 = tf.layers.dense({ units: 128, kernelInitializer: 'heNormal' }).apply(flatten);
     const activDense1 = tf.layers.activation('relu').apply(dense1);
 
-    const dense2 = tf.layers.dense({ units: 64 }).apply(activDense1);
+    const dense2 = tf.layers.dense({ units: 64, kernelInitializer: 'heNormal' }).apply(activDense1);
     const activDense2 = tf.layers.activation('relu').apply(dense2);
 
-    const dense3 = tf.layers.dense({ units: 32 }).apply(activDense2);
+    const dense3 = tf.layers.dense({ units: 32, kernelInitializer: 'heNormal' }).apply(activDense2);
     const activDense3 = tf.layers.activation('relu').apply(dense3);
 
-    const dense4 = tf.layers.dense({ units: 10 }).apply(activDense3);
+    const dense4 = tf.layers.dense({ units: 10, kernelInitializer: 'heNormal' }).apply(activDense3);
     const activDense4 = tf.layers.activation('relu').apply(dense4);
 
-    const denseOutput = tf.layers.dense({ units: 4 }).apply(activDense4);
-    const activOutput = tf.layers.activation('sigmoid').apply(denseOutput);
+    const denseOutput = tf.layers.dense({ units: 3, kernelInitializer: 'heNormal' }).apply(activDense4);
+    const activOutput = tf.layers.activation('relu').apply(denseOutput);
 
     const model = tf.model({ inputs: input, outputs: activOutput });
     model.summary();
@@ -60,7 +60,7 @@ class Model {
       const h = await this.model.fit(xs, ys, {
         batchSize: 100,
         epochs: 25,
-        shuffle: false,
+        shuffle: true,
         validationSplit: 0.3
       });
 
@@ -82,11 +82,10 @@ class Model {
 
     const mean = prediction.mean(0).dataSync();
     const freq = this.data.invNorm(mean[0], 20, 20000);
-    const q = this.data.invNorm(mean[1], 0, 5.0);
-    const gain = this.data.invNorm(mean[2], -15.0, 15.0);
-    const bw = this.data.invNorm(mean[3], 0, 5.0);
+    const gain = this.data.invNorm(mean[1], -15.0, 15.0);
+    const q = this.data.bw2q(this.data.invNorm(mean[2], 0, 5.0), freq);
 
-    console.log(freq, q, gain, bw);
+    console.log(freq, q, gain);
   }
 }
 

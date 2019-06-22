@@ -13,13 +13,13 @@ class Model {
     const input = tf.input({ shape: [2048] });
     const reshape = tf.layers.reshape({ targetShape: [64, 32, 1] }).apply(input);
 
-    const conv1 = tf.layers.conv2d({ filters: 32, kernelSize: 32, strides: 1, padding: 'same' }).apply(reshape);
+    const conv1 = tf.layers.conv2d({ filters: 16, kernelSize: 32, strides: 1, padding: 'same' }).apply(reshape);
     const activ1 = tf.layers.activation('relu').apply(conv1);
     const norm1 = tf.layers.batchNormalization().apply(activ1);
     const pooling1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm1);
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pooling1);
 
-    const conv2 = tf.layers.conv2d({ filters: 64, kernelSize: 5, strides: 1, padding: 'same' }).apply(dropout1);
+    const conv2 = tf.layers.conv2d({ filters: 32, kernelSize: 5, strides: 1, padding: 'same' }).apply(dropout1);
     const activ2 = tf.layers.activation('relu').apply(conv2);
     const norm2 = tf.layers.batchNormalization().apply(activ2);
     const pooling2 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm2);

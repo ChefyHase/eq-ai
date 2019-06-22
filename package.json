@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "npx jest",
-    "train": "node --max_old_space_size=4096 index.js",
+    "train": "node --max_old_space_size=4096 train.js",
     "mastering": "node --max_old_space_size=4096 bin/mastering.js",
     "dataSet": "node --max_old_space_size=6144 data/dataset2json.js"
   },

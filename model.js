@@ -27,16 +27,19 @@ class Model {
 
     const flatten = tf.layers.flatten().apply(dropout2);
 
-    const dense1 = tf.layers.dense({ units: 64 }).apply(flatten);
+    const dense1 = tf.layers.dense({ units: 128 }).apply(flatten);
     const activDense1 = tf.layers.reLU().apply(dense1);
 
-    const dense2 = tf.layers.dense({ units: 25 }).apply(activDense1);
+    const dense2 = tf.layers.dense({ units: 64 }).apply(activDense1);
     const activDense2 = tf.layers.reLU().apply(dense2);
 
-    const dense3 = tf.layers.dense({ units: 10 }).apply(activDense2);
+    const dense3 = tf.layers.dense({ units: 32 }).apply(activDense2);
     const activDense3 = tf.layers.reLU().apply(dense3);
 
-    const denseOutput = tf.layers.dense({ units: 4 }).apply(activDense3);
+    const dense4 = tf.layers.dense({ units: 10 }).apply(activDense3);
+    const activDense4 = tf.layers.reLU().apply(dense4);
+
+    const denseOutput = tf.layers.dense({ units: 4 }).apply(activDense4);
     const activOutput = tf.layers.reLU().apply(denseOutput);
 
     const model = tf.model({ inputs: input, outputs: activOutput });
@@ -49,7 +52,7 @@ class Model {
     console.log('model build: done');
 
     const optimizer = tf.train.adam(0.0001);
-    this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError', metrics: ['accuracy'] });
+    this.model.compile({ optimizer: optimizer, loss: 'binaryCrossentropy', metrics: ['accuracy'] });
 
     for (let i = 0; i < config.trainEpoches; ++i) {
       const { xs, ys } = this.data.nextBatch();
@@ -57,7 +60,7 @@ class Model {
       const h = await this.model.fit(xs, ys, {
         batchSize: 100,
         epochs: 25,
-        shuffle: true,
+        shuffle: false,
         validationSplit: 0.3
       });
 

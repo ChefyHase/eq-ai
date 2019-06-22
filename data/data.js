@@ -90,7 +90,6 @@ class Data {
       }
       this.dataSets.push([xBatch, labelBatch]);
     }
-    this.dataSets = _.shuffle(this.dataSets);
   }
 
   nextBatch() {

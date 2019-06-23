@@ -11,32 +11,25 @@ class Model {
   build() {
     const droprate = 0.2;
     const input = tf.input({ shape: [2048] });
-    const reshape = tf.layers.reshape({ targetShape: [64, 32, 1] }).apply(input);
+    const reshape = tf.layers.reshape({ targetShape: [32, 32, 2] }).apply(input);
 
-    const conv1 = tf.layers.conv2d({ filters: 8, kernelSize: 32, strides: 1, padding: 'same' }).apply(reshape);
+    const conv1 = tf.layers.conv2d({ filters: 16, kernelSize: 3, padding: 'same' }).apply(reshape);
     const activ1 = tf.layers.activation('relu').apply(conv1);
     const norm1 = tf.layers.batchNormalization().apply(activ1);
-    const pooling1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm1);
-    const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pooling1);
+    const pool1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm1);
+    const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pool1);
 
-    const conv2 = tf.layers.conv2d({ filters: 16, kernelSize: 5, strides: 1, padding: 'same' }).apply(dropout1);
+    const conv2 = tf.layers.conv2d({ filters: 32, kernelSize: 3, padding: 'same' }).apply(dropout1);
     const activ2 = tf.layers.activation('relu').apply(conv2);
     const norm2 = tf.layers.batchNormalization().apply(activ2);
-    const pooling2 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm2);
-    const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pooling2);
+    const pool2 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm2);
+    const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pool2);
 
     const flatten = tf.layers.flatten().apply(dropout2);
 
-    const dense1 = tf.layers.dense({ units: 1000 }).apply(flatten);
-    const activDense1 = tf.layers.activation('relu').apply(dense1);
-
-    const dense2 = tf.layers.dense({ units: 500 }).apply(activDense1);
-    const activDense2 = tf.layers.activation('relu').apply(dense2);
-
-    const dense3 = tf.layers.dense({ units: 100 }).apply(activDense2);
-    const activDense3 = tf.layers.activation('relu').apply(dense3);
-
-    const denseOutput = tf.layers.dense({ units: 3 }).apply(activDense3);
+    const dense1 = tf.layers.dense({ units: 64 }).apply(flatten);
+    const dense1activ = tf.layers.activation('relu').apply(dense1);
+    const denseOutput = tf.layers.dense({ units: 3 }).apply(dense1activ);
     const activOutput = tf.layers.activation('relu').apply(denseOutput);
 
     const model = tf.model({ inputs: input, outputs: activOutput });
@@ -55,7 +48,7 @@ class Model {
       const { xs, ys } = this.data.nextBatch();
 
       const h = await this.model.fit(xs, ys, {
-        batchSize: 200,
+        batchSize: 64,
         epochs: 100,
         shuffle: true,
         validationSplit: 0.3

@@ -11,7 +11,7 @@ const config = require('../config');
 class Data {
   constructor(args) {
     this.samplerate = 44100;
-    this.shortTimeSamples = 2048 // Math.pow(2, 16);
+    this.shortTimeSamples = 512 // Math.pow(2, 16);
 
     this.sounds = [];
     this.filterParams = [];
@@ -37,12 +37,12 @@ class Data {
       soundBuffer = sound;
     }
     else {
-      const soundFilaPeth = path.resolve(soundPath);
+      const soundFilaPeth = path.resolve(sound);
       soundBuffer = await decoder.decode(fs.readFileSync(soundFilaPeth));
     }
     soundBuffer = soundBuffer.channelData[chunnel];
 
-    const shortTimeSounds = _.chunk(soundBuffer, this.shortTimeSamples);
+    const shortTimeSounds = _.chunk(soundBuffer, this.shortTimeSamples * 2);
     shortTimeSounds.pop();
 
     return shortTimeSounds;
@@ -54,14 +54,15 @@ class Data {
       let buffers = await this.separateSound(p, 0);
       // random selection
       let index = 0;
-      let randIndex = Array(buffers.length).fill(0);
+      let randIndex = Array(buffers.length - this.shortTimeSamples).fill(0);
       randIndex = randIndex.map((elem) => {
         return index++;
       });
       randIndex = _.shuffle(randIndex).slice(0, config.samplesPerSong);
       let randL = [];
       for (let i = 0; i < randIndex.length; i++) {
-        randL.push(buffers[randIndex[i]]);
+        const sliced = buffers.slice(randIndex[i], randIndex[i] + this.shortTimeSamples);
+        randL.push(sliced);
       }
 
       if (config.varbose) console.log(i + ' / ' + config.numSamples);
@@ -83,11 +84,21 @@ class Data {
     else {
       for (let i = 0; i < this.sounds.length; i++) {
         const filterParam = this.randomFilterParam();
-        const filtered = peaking.peaking(this.sounds[i], filterParam);
+        const filtered = this.sounds[i].map((buffer) => {
+          return peaking.peaking(buffer, filterParam);
+        });
 
         this.sounds[i] = filtered;
         this.filterParams.push(filterParam);
       }
+    }
+  }
+
+  fft() {
+    for (let i = 0; i < this.sounds.length; i++) {
+      const tensor = tf.tensor(this.sounds[i]);
+      this.sounds[i] = tf.spectral.rfft(tensor).abs().arraySync();
+      tensor.dispose();
     }
   }
 
@@ -96,7 +107,7 @@ class Data {
       const xBatch = [];
       const labelBatch = [];
       for (let i = 0; i < config.batchSize; i++) {
-        xBatch.push(Array(...this.sounds[i]));
+        xBatch.push([this.sounds[i]]);
         labelBatch.push([
           this.norm(this.filterParams[i].freq, 20, 20000),
           this.norm(this.filterParams[i].gain, -15.0, 15.0),

@@ -10,19 +10,18 @@ class Model {
 
   build() {
     const droprate = 0.2;
-    const input = tf.input({ shape: [2048] });
-    const reshape = tf.layers.reshape({ targetShape: [32, 32, 2] }).apply(input);
+    const input = tf.input({ shape: [1, 512, 513] });
 
-    const conv1 = tf.layers.conv2d({ filters: 16, kernelSize: 3, padding: 'same' }).apply(reshape);
+    const conv1 = tf.layers.conv2d({ dataFormat: 'channelsFirst', filters: 16, kernelSize: 15, padding: 'same' }).apply(input);
     const activ1 = tf.layers.activation('relu').apply(conv1);
     const norm1 = tf.layers.batchNormalization().apply(activ1);
-    const pool1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm1);
+    const pool1 = tf.layers.maxPooling2d({ dataFormat: 'channelsFirst', poolSize: 8 }).apply(norm1);
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pool1);
 
-    const conv2 = tf.layers.conv2d({ filters: 32, kernelSize: 3, padding: 'same' }).apply(dropout1);
+    const conv2 = tf.layers.conv2d({ dataFormat: 'channelsFirst', filters: 32, kernelSize: 3, padding: 'same' }).apply(dropout1);
     const activ2 = tf.layers.activation('relu').apply(conv2);
     const norm2 = tf.layers.batchNormalization().apply(activ2);
-    const pool2 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm2);
+    const pool2 = tf.layers.maxPooling2d({ dataFormat: 'channelsFirst', poolSize: 8 }).apply(norm2);
     const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pool2);
 
     const flatten = tf.layers.flatten().apply(dropout2);
@@ -48,7 +47,7 @@ class Model {
       const { xs, ys } = this.data.nextBatch();
 
       const h = await this.model.fit(xs, ys, {
-        batchSize: 64,
+        batchSize: 1,
         epochs: 100,
         shuffle: true,
         validationSplit: 0.3

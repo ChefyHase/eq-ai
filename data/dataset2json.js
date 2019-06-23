@@ -5,8 +5,11 @@ const config = require('../config.js');
 (async () => {
   const data = new Data();
   await data.separation();
-  data.applyFilter();
+  await data.applyFilter();
+  data.fft();
   data.makeDataset();
+  console.log(data.dataSets[0][0])
+  console.log(data.dataSets[0][1])
 
   for (let i = 0; i < config.trainEpoches; i++) {
     const filePath = config.dataSetPath + i + '.json';

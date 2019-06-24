@@ -9,30 +9,64 @@ class Model {
   }
 
   build() {
-    const droprate = 0.2;
+    const droprate = 0;
     const input = tf.input({ shape: [2048] });
     const reshape = tf.layers.reshape({ targetShape: [32, 32, 2] }).apply(input);
 
-    const conv1 = tf.layers.conv2d({ filters: 16, kernelSize: 3, padding: 'same' }).apply(reshape);
-    const activ1 = tf.layers.activation('relu').apply(conv1);
-    const norm1 = tf.layers.batchNormalization().apply(activ1);
-    const pool1 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm1);
+    const conv1 = tf.layers.conv2d({
+      filters: 32,
+      kernelSize: [3, 1],
+      padding: 'same',
+      activation: 'linear',
+      kernelInitializer: 'heNormal'
+    }).apply(reshape);
+    const norm1 = tf.layers.batchNormalization().apply(conv1);
+    const pool1 = tf.layers.averagePooling2d({ poolSize: [2, 1] }).apply(norm1);
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pool1);
 
-    const conv2 = tf.layers.conv2d({ filters: 32, kernelSize: 3, padding: 'same' }).apply(dropout1);
-    const activ2 = tf.layers.activation('relu').apply(conv2);
-    const norm2 = tf.layers.batchNormalization().apply(activ2);
-    const pool2 = tf.layers.maxPooling2d({ poolSize: 2 }).apply(norm2);
+    const conv2 = tf.layers.conv2d({
+      filters: 64,
+      kernelSize: [3, 1],
+      padding: 'same',
+      activation: 'linear',
+      kernelInitializer: 'heNormal'
+     }).apply(dropout1);
+    const norm2 = tf.layers.batchNormalization().apply(conv2);
+    const pool2 = tf.layers.averagePooling2d({ poolSize: [2, 1] }).apply(norm2);
     const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pool2);
 
-    const flatten = tf.layers.flatten().apply(dropout2);
+    const conv3 = tf.layers.conv2d({
+      filters: 128,
+      kernelSize: [3, 1],
+      padding: 'same',
+      activation: 'linear',
+      kernelInitializer: 'heNormal'
+     }).apply(dropout2);
+    const norm3 = tf.layers.batchNormalization().apply(conv3);
+    const pool3 = tf.layers.averagePooling2d({ poolSize: [2, 1] }).apply(norm3);
+    const dropout3 = tf.layers.dropout({ rate: droprate }).apply(pool3);
 
-    const dense1 = tf.layers.dense({ units: 64 }).apply(flatten);
-    const dense1activ = tf.layers.activation('relu').apply(dense1);
-    const denseOutput = tf.layers.dense({ units: 3 }).apply(dense1activ);
-    const activOutput = tf.layers.activation('relu').apply(denseOutput);
+    const flatten = tf.layers.flatten().apply(dropout3);
 
-    const model = tf.model({ inputs: input, outputs: activOutput });
+    const dense1 = tf.layers.dense({
+      units: 5000,
+      activation: 'sigmoid',
+      kernelInitializer: 'heNormal'
+     }).apply(flatten);
+    const dense1norm = tf.layers.batchNormalization().apply(dense1);
+    const dense2 = tf.layers.dense({
+      units: 1024,
+      activation: 'sigmoid',
+      kernelInitializer: 'heNormal'
+     }).apply(dense1norm);
+    const dense2norm = tf.layers.batchNormalization().apply(dense2);
+    const denseOutput = tf.layers.dense({
+      units: 3,
+      activation: 'sigmoid',
+      kernelInitializer: 'heNormal'
+     }).apply(dense2norm);
+
+    const model = tf.model({ inputs: input, outputs: denseOutput });
     model.summary();
     this.model = model;
   }
@@ -42,16 +76,17 @@ class Model {
     console.log('model build: done');
 
     const optimizer = tf.train.adam(0.0001);
-    this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError' });
+    this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError', metrics: ['accuracy'] });
 
     for (let i = 0; i < config.trainEpoches; ++i) {
       const { xs, ys } = this.data.nextBatch();
 
       const h = await this.model.fit(xs, ys, {
         batchSize: 64,
-        epochs: 100,
+        epochs: 10,
         shuffle: true,
-        validationSplit: 0.3
+        validationSplit: 0.3,
+        // callbacks: tf.callbacks.earlyStopping()
       });
 
       console.log("Loss after Epoch " + i + " : " + h.history.loss[0]);

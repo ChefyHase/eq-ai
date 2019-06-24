@@ -37,7 +37,7 @@ class Data {
       soundBuffer = sound;
     }
     else {
-      const soundFilaPeth = path.resolve(soundPath);
+      const soundFilaPeth = path.resolve(sound);
       soundBuffer = await decoder.decode(fs.readFileSync(soundFilaPeth));
     }
     soundBuffer = soundBuffer.channelData[chunnel];
@@ -96,12 +96,13 @@ class Data {
       const xBatch = [];
       const labelBatch = [];
       for (let i = 0; i < config.batchSize; i++) {
-        xBatch.push(Array(...this.sounds[i]));
+        xBatch.push(Array(...this.sounds[this.batchIndex]));
         labelBatch.push([
-          this.norm(this.filterParams[i].freq, 20, 20000),
-          this.norm(this.filterParams[i].gain, -15.0, 15.0),
-          this.norm(this.filterParams[i].q, 0.1, 24.0)
+          this.norm(this.filterParams[this.batchIndex].freq, 20, 20000),
+          this.norm(this.filterParams[this.batchIndex].gain, -15.0, 15.0),
+          this.norm(this.filterParams[this.batchIndex].q, 0.1, 24.0)
         ]);
+        this.batchIndex++;
       }
       this.dataSets.push([xBatch, labelBatch]);
     }

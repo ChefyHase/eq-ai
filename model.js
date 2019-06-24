@@ -14,7 +14,7 @@ class Model {
     const reshape = tf.layers.reshape({ targetShape: [32, 32, 2] }).apply(input);
 
     const conv1 = tf.layers.conv2d({
-      filters: 32,
+      filters: 16,
       kernelSize: [3, 1],
       padding: 'same',
       activation: 'linear',
@@ -25,7 +25,7 @@ class Model {
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pool1);
 
     const conv2 = tf.layers.conv2d({
-      filters: 64,
+      filters: 32,
       kernelSize: [3, 1],
       padding: 'same',
       activation: 'linear',
@@ -36,7 +36,7 @@ class Model {
     const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pool2);
 
     const conv3 = tf.layers.conv2d({
-      filters: 128,
+      filters: 64,
       kernelSize: [3, 1],
       padding: 'same',
       activation: 'linear',
@@ -75,7 +75,7 @@ class Model {
     this.build();
     console.log('model build: done');
 
-    const optimizer = tf.train.adam(0.0001);
+    const optimizer = tf.train.adam(0.0005);
     this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError', metrics: ['accuracy'] });
 
     for (let i = 0; i < config.trainEpoches; ++i) {
@@ -83,7 +83,7 @@ class Model {
 
       const h = await this.model.fit(xs, ys, {
         batchSize: 64,
-        epochs: 10,
+        epochs: 100,
         shuffle: true,
         validationSplit: 0.3,
         // callbacks: tf.callbacks.earlyStopping()

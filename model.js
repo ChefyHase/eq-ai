@@ -14,7 +14,7 @@ class Model {
     const reshape = tf.layers.reshape({ targetShape: [32, 32, 2] }).apply(input);
 
     const conv1 = tf.layers.conv2d({
-      filters: 16,
+      filters: 8,
       kernelSize: [3, 1],
       padding: 'same',
       activation: 'linear',
@@ -25,7 +25,7 @@ class Model {
     const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pool1);
 
     const conv2 = tf.layers.conv2d({
-      filters: 32,
+      filters: 16,
       kernelSize: [3, 1],
       padding: 'same',
       activation: 'linear',
@@ -36,7 +36,7 @@ class Model {
     const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pool2);
 
     const conv3 = tf.layers.conv2d({
-      filters: 64,
+      filters: 32,
       kernelSize: [3, 1],
       padding: 'same',
       activation: 'linear',

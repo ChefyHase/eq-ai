@@ -111,9 +111,17 @@ class Data {
   nextBatch() {
     this.loadDataset(this.index);
     this.index++;
+    const ys = [];
+    for (let j = 0; j < 24; j++) {
+      let tens = [];
+      for (let i = 0; i < this.dataSets[1].length; i++) {
+        tens.push([this.dataSets[1][i][j]]);
+      }
+      ys.push(tf.tensor(tens));
+    }
     return {
       xs: this.normTens(tf.tensor(this.dataSets[0], null, 'float32')),
-      ys: tf.tensor(this.dataSets[1], null, 'float32')
+      ys: ys
     }
   }
 
@@ -127,7 +135,25 @@ class Data {
     const filePath = config.dataSetPath + index + '.json';
     let json = JSON.parse(fs.readFileSync(filePath));
     const soundBuffer = _.chunk(json[0], this.shortTimeSamples);
-    this.dataSets = [soundBuffer, json[1]];
+    const params = [];
+    for (let param of json[1]) {
+      let freqBin = this.dec2Bin(param[0])
+      let qBin = this.dec2Bin(param[1])
+      let gainBin = this.dec2Bin(param[2])
+      params.push([...freqBin, ...qBin, ...gainBin]);
+    }
+    this.dataSets = [soundBuffer, params];
+  }
+
+  dec2Bin(dec) {
+    let bin = parseInt(255 * dec, 10).toString(2).split('');
+    bin = bin.reverse();
+    let output = Array(8).fill(0);
+    for (let i = 0; i < bin.length; i++) {
+      output[i] = Number(bin[i]);
+    }
+    output.reverse();
+    return output;
   }
 
   disposer(tensors) {

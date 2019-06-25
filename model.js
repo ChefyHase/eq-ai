@@ -13,81 +13,32 @@ class Model {
     const input = tf.input({ shape: [4096] });
     const reshape = tf.layers.reshape({ targetShape: [4096, 1, 1] }).apply(input);
 
-    const conv1 = tf.layers.conv2d({
-      filters: 128,
-      kernelSize: [64, 1],
-      padding: 'same',
-      activation: 'relu',
-      kernelInitializer: 'heNormal',
-      kernelRegularizer: 'l1l2',
-      strides: [2, 1]
-    }).apply(reshape);
-    const norm1 = tf.layers.batchNormalization().apply(conv1);
-    const conv2 = tf.layers.conv2d({
-      filters: 128,
-      kernelSize: [32, 1],
-      padding: 'same',
-      activation: 'relu',
-      kernelInitializer: 'heNormal',
-      kernelRegularizer: 'l1l2',
-      strides: [2, 1]
-    }).apply(norm1);
-    const norm2 = tf.layers.batchNormalization().apply(conv2);
-    const pool1 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm2);
-    const dropout1 = tf.layers.dropout({ rate: droprate }).apply(pool1);
+    const outputs = [];
+    for (let n = 0; n < 3 * 8; n++) {
 
-    const conv3 = tf.layers.conv2d({
-      filters: 256,
-      kernelSize: [16, 1],
-      padding: 'same',
-      activation: 'relu',
-      kernelInitializer: 'heNormal',
-      kernelRegularizer: 'l1l2',
-      strides: [2, 1]
-    }).apply(dropout1);
-    const norm3 = tf.layers.batchNormalization().apply(conv3);
-    const conv4 = tf.layers.conv2d({
-      filters: 256,
-      kernelSize: [8, 1],
-      padding: 'same',
-      activation: 'relu',
-      kernelInitializer: 'heNormal',
-      kernelRegularizer: 'l1l2',
-      strides: [2, 1]
-    }).apply(norm3);
-    const norm4 = tf.layers.batchNormalization().apply(conv4);
-    const pool2 = tf.layers.globalMaxPooling2d({ name: 'pool' }).apply(norm4);
-    const dropout2 = tf.layers.dropout({ rate: droprate }).apply(pool2);
+      const conv1 = tf.layers.conv2d({
+        filters: 128,
+        kernelSize: [64, 1],
+        padding: 'same',
+        activation: 'relu',
+        kernelInitializer: 'heNormal',
+        kernelRegularizer: 'l1l2',
+        strides: [2, 1]
+      }).apply(reshape);
+      const norm1 = tf.layers.batchNormalization().apply(conv1);
+      const pool = tf.layers.globalMaxPooling2d({ name: 'pool' + n }).apply(norm1);
 
-    const dense1 = tf.layers.dense({
-      units: 128,
-      activation: 'relu',
-      kernelInitializer: 'heNormal',
-      kernelRegularizer: 'l1l2'
-    }).apply(dropout2);
-    const dense1norm = tf.layers.batchNormalization().apply(dense1);
-    const dense2 = tf.layers.dense({
-      units: 64,
-      activation: 'relu',
-      kernelInitializer: 'heNormal',
-      kernelRegularizer: 'l1l2'
-    }).apply(dense1norm);
-    const dense2norm = tf.layers.batchNormalization().apply(dense2);
-    const dense3 = tf.layers.dense({
-      units: 32,
-      activation: 'relu',
-      kernelInitializer: 'heNormal',
-      kernelRegularizer: 'l1l2'
-    }).apply(dense2norm);
-    const dense3norm = tf.layers.batchNormalization().apply(dense3);
-    const denseOutput = tf.layers.dense({
-      units: 3,
-      activation: 'softmax',
-      kernelInitializer: 'heNormal',
-      kernelRegularizer: 'l1l2'
-    }).apply(dense3norm);
+      const denseOutput = tf.layers.dense({
+        units: 1,
+        activation: 'softmax',
+        kernelInitializer: 'heNormal',
+        kernelRegularizer: 'l1l2'
+      }).apply(pool);
 
-    const model = tf.model({ inputs: input, outputs: denseOutput });
+      outputs.push(denseOutput);
+    }
+
+    const model = tf.model({ inputs: input, outputs: outputs });
     model.summary();
     this.model = model;
 

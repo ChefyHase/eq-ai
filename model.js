@@ -17,7 +17,7 @@ class Model {
     for (let n = 0; n < 3 * 8; n++) {
 
       const conv1 = tf.layers.conv2d({
-        filters: 64,
+        filters: 8,
         kernelSize: [3, 1],
         padding: 'same',
         activation: 'relu',
@@ -30,7 +30,7 @@ class Model {
 
       const denseOutput = tf.layers.dense({
         units: 1,
-        activation: 'softmax',
+        activation: 'sigmoid',
         kernelInitializer: 'heNormal',
         kernelRegularizer: 'l1l2'
       }).apply(pool);
@@ -50,24 +50,25 @@ class Model {
     console.log('model build: done');
 
     const optimizer = tf.train.adam(0.005);
-    this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError', metrics: ['accuracy'] });
+    this.model.compile({ optimizer: optimizer, loss: 'binaryCrossentropy', metrics: ['accuracy'] });
 
-    for (let i = 0; i < config.trainEpoches; ++i) {
+    for (let j = 0; j < config.trainEpoches; ++j) {
       let { xs, ys } = this.data.nextBatch();
+      for (let i = 0; i < 50; i++) {
+        const h = await this.model.fit(xs, ys, {
+          batchSize: 64,
+          epochs: 1,
+          shuffle: true,
+          validationSplit: 0.3,
+          verbose: 0
+        });
 
-      const h = await this.model.fit(xs, ys, {
-        batchSize: 64,
-        epochs: 100,
-        shuffle: true,
-        validationSplit: 0.3,
-        // callbacks: tf.callbacks.earlyStopping()
-      });
+        console.log("Loss after Epoch " + i + " : " + h.history.loss[0]);
+        console.log("Val_Loss after Epoch " + i + " : " + h.history.val_loss[0]);
 
-      console.log("Loss after Epoch " + i + " : " + h.history.loss[0]);
-      await this.model.save('file://./mastering-ai');
-
+        await this.model.save('file://./mastering-ai');
+      }
       xs.dispose();
-      ys.dispose();
     }
   }
 
@@ -76,6 +77,7 @@ class Model {
     if (this.model === null) this.build();
     const predictBatch = await this.data.predictBatch(wav);
     const prediction = this.model.predict(predictBatch);
+    console.log(prediction);
     const mean = prediction.mean(0).dataSync();
     const freq = this.data.invNorm(mean[0], 20, 20000);
     const gain = this.data.invNorm(mean[1], -15.0, 15.0);

@@ -17,7 +17,7 @@ class Model {
     for (let n = 0; n < 3 * 8; n++) {
 
       const conv1 = tf.layers.conv2d({
-        filters: 8,
+        filters: 16,
         kernelSize: [3, 1],
         padding: 'same',
         activation: 'relu',

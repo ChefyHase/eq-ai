@@ -11,7 +11,7 @@ const config = require('../config');
 class Data {
   constructor(args) {
     this.samplerate = 44100;
-    this.shortTimeSamples = 2048 // Math.pow(2, 16);
+    this.shortTimeSamples = 4096; // Math.pow(2, 16);
 
     this.sounds = [];
     this.filterParams = [];
@@ -25,7 +25,7 @@ class Data {
     const params = {
       freq: _.random(20, 20000),
       q: _.random(0.1, 24.0, true),
-      gain: _.random(-15.0, 15.0, true),
+      gain: _.random(-24.0, 24.0, true),
       samplerate: this.samplerate
     }
     return params;
@@ -96,10 +96,10 @@ class Data {
       const xBatch = [];
       const labelBatch = [];
       for (let i = 0; i < config.batchSize; i++) {
-        xBatch.push(Array(...this.sounds[this.batchIndex]));
+        xBatch.push(...this.sounds[this.batchIndex]);
         labelBatch.push([
           this.norm(this.filterParams[this.batchIndex].freq, 20, 20000),
-          this.norm(this.filterParams[this.batchIndex].gain, -15.0, 15.0),
+          this.norm(this.filterParams[this.batchIndex].gain, -24.0, 24.0),
           this.norm(this.filterParams[this.batchIndex].q, 0.1, 24.0)
         ]);
         this.batchIndex++;
@@ -112,21 +112,22 @@ class Data {
     this.loadDataset(this.index);
     this.index++;
     return {
-      xs: tf.tensor(this.dataSets[0]),
-      ys: tf.tensor(this.dataSets[1])
+      xs: this.normTens(tf.tensor(this.dataSets[0], null, 'float32')),
+      ys: tf.tensor(this.dataSets[1], null, 'float32')
     }
   }
 
   async predictBatch(wav) {
     const buffer = await this.separateSound(wav);
-    const ts = tf.tensor(buffer);
+    const ts = this.normTens(tf.tensor(buffer));
     return ts;
   }
 
   loadDataset(index) {
     const filePath = config.dataSetPath + index + '.json';
     let json = JSON.parse(fs.readFileSync(filePath));
-    this.dataSets = json;
+    const soundBuffer = _.chunk(json[0], this.shortTimeSamples);
+    this.dataSets = [soundBuffer, json[1]];
   }
 
   disposer(tensors) {
@@ -137,6 +138,10 @@ class Data {
 
   norm(x, min, max) {
     return (x - min) / (max - min);
+  }
+
+  normTens(xs) {
+    return tf.div(xs.sub(xs.min()), xs.max().sub(xs.min()));
   }
 
   invNorm(y, min, max) {

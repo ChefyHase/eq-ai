@@ -11,7 +11,7 @@ const config = require('../config');
 class Data {
   constructor(args) {
     this.samplerate = 44100;
-    this.shortTimeSamples = 4096; // Math.pow(2, 16);
+    this.shortTimeSamples = 512; // Math.pow(2, 16);
 
     this.sounds = [];
     this.filterParams = [];

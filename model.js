@@ -10,15 +10,15 @@ class Model {
 
   build() {
     const droprate = 0;
-    const input = tf.input({ shape: [4096] });
-    const reshape = tf.layers.reshape({ targetShape: [4096, 1, 1] }).apply(input);
+    const input = tf.input({ shape: [512] });
+    const reshape = tf.layers.reshape({ targetShape: [512, 1, 1] }).apply(input);
 
     const outputs = [];
     for (let n = 0; n < 3 * 8; n++) {
 
       const conv1 = tf.layers.conv2d({
-        filters: 128,
-        kernelSize: [64, 1],
+        filters: 64,
+        kernelSize: [3, 1],
         padding: 'same',
         activation: 'relu',
         kernelInitializer: 'heNormal',

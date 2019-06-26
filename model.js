@@ -17,22 +17,22 @@ class Model {
     for (let n = 0; n < 3 * 8; n++) {
 
       const conv1 = tf.layers.conv2d({
-        filters: 16,
-        kernelSize: [3, 1],
+        filters: 32,
+        kernelSize: [128, 1],
         padding: 'same',
         activation: 'relu',
-        kernelInitializer: 'heNormal',
-        kernelRegularizer: 'l1l2',
-        strides: [2, 1]
+        // kernelRegularizer: 'l1l2',
+        strides: [2, 1],
+        kernelInitializer: 'heNormal'
       }).apply(reshape);
       const conv2 = tf.layers.conv2d({
-        filters: 16,
-        kernelSize: [3, 1],
+        filters: 32,
+        kernelSize: [128, 1],
         padding: 'same',
         activation: 'relu',
-        kernelInitializer: 'heNormal',
-        kernelRegularizer: 'l1l2',
-        strides: [2, 1]
+        // kernelRegularizer: 'l1l2',
+        strides: [2, 1],
+        kernelInitializer: 'heNormal'
       }).apply(conv1);
       const norm1 = tf.layers.batchNormalization().apply(conv2);
       const pool1 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm1);
@@ -40,17 +40,23 @@ class Model {
       const flatten = tf.layers.flatten().apply(pool1)
 
       const dense1 = tf.layers.dense({
-        units: 1024,
-        activation: 'sigmoid',
-        kernelInitializer: 'heNormal',
-        kernelRegularizer: 'l1l2'
+        units: 256,
+        activation: 'relu',
+        // kernelRegularizer: 'l1l2',
+        kernelInitializer: 'heNormal'
       }).apply(flatten);
-      const denseOutput = tf.layers.dense({
-        units: 1,
-        activation: 'sigmoid',
-        kernelInitializer: 'heNormal',
-        kernelRegularizer: 'l1l2'
+      const dense2 = tf.layers.dense({
+        units: 128,
+        activation: 'relu',
+        // kernelRegularizer: 'l1l2',
+        kernelInitializer: 'heNormal'
       }).apply(dense1);
+      const denseOutput = tf.layers.dense({
+        units: 2,
+        activation: 'softmax',
+        // kernelRegularizer: 'l1l2',
+        kernelInitializer: 'heNormal'
+      }).apply(dense2);
 
       outputs.push(denseOutput);
     }
@@ -66,22 +72,21 @@ class Model {
     this.build();
     console.log('model build: done');
 
-    const optimizer = tf.train.adam(0.005);
-    this.model.compile({ optimizer: optimizer, loss: 'binaryCrossentropy', metrics: ['accuracy'] });
+    const optimizer = tf.train.adam(0.0001);
+    this.model.compile({ optimizer: optimizer, loss: 'categoricalCrossentropy', metrics: ['accuracy'] });
 
     for (let j = 0; j < config.trainEpoches; ++j) {
       let { xs, ys } = this.data.nextBatch();
       for (let i = 0; i < 50; i++) {
         const h = await this.model.fit(xs, ys, {
-          batchSize: 64,
+          batchSize: 20,
           epochs: 1,
           shuffle: true,
           validationSplit: 0.3,
           verbose: 0
         });
 
-        console.log("Loss after Epoch " + i + " : " + h.history.loss[0]);
-        console.log("Val_Loss after Epoch " + i + " : " + h.history.val_loss[0]);
+        console.log("Epoch " + i + " : Loss : " + h.history.loss[0] + ' / Val_Loss : ' + h.history.val_loss[0]);
 
         await this.model.save('file://./mastering-ai');
       }

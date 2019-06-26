@@ -115,7 +115,8 @@ class Data {
     for (let j = 0; j < 24; j++) {
       let tens = [];
       for (let i = 0; i < this.dataSets[1].length; i++) {
-        tens.push([this.dataSets[1][i][j]]);
+        if (this.dataSets[1][i][j] === 0) tens.push([0, 1]);
+        else tens.push([1, 0]);
       }
       ys.push(tf.tensor(tens));
     }

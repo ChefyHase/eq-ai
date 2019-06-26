@@ -120,8 +120,6 @@ class Model {
       const diff = predFiltered.sub(x);
       const lossSound = tf.metrics.meanSquaredError(tf.zeros(diff.shape), diff);
 
-      diff.abs().max().print()
-
       return lossSound;
     });
   }
@@ -131,13 +129,16 @@ class Model {
       const lossParam = this.lossParam(yTrue, yPred);
       const lossSound = this.lossSound(x, yPred);
       const totalLoss = lossSound.mean().mul(tf.scalar(1 - 0.3)).add(lossParam.mean().mul(tf.scalar(0.3)));
+
+      console.log('LossParam: ' + lossParam.mean().dataSync() + ' / LossSound: ' + lossSound.mean().dataSync());
+
       return totalLoss;
     });
   }
 
   async train() {
-    this.build();
-    // this.model = await tf.loadLayersModel('file://./eq-ai/model.json');
+    // this.build();
+    this.model = await tf.loadLayersModel('file://./eq-ai/model.json');
     const optimizer = tf.train.adam(0.0005);
 
     let { xs, ys } = this.data.nextBatch();
@@ -148,16 +149,16 @@ class Model {
         return this.loss(xs, ys, pred);
       }, true);
       trainLoss = Number(trainLoss.dataSync());
-      console.log(trainLoss + ' / ' + (prevLoss - trainLoss));
+      console.log(`Epoch ${j + 1}: ` + trainLoss + ' / ' + (prevLoss - trainLoss));
       prevLoss = trainLoss;
       // if (j % 50 === 0 && j !== 0) console.log(await this.predict('./Mixdown.wav'));
-      await this.model.save('file://./eq-ai');
+      await this.model.save('file://./eq-ai-1');
       await tf.nextFrame();
     }
   }
 
   async predict(wav) {
-    if (this.model === null) this.model = await tf.loadLayersModel(`file://${__dirname}/eq-ai-3/model.json`);
+    if (this.model === null) this.model = await tf.loadLayersModel(`file://${__dirname}/eq-ai/model.json`);
     const predictBatch = await this.data.predictBatch(wav);
     const prediction = this.model.predict(predictBatch);
     const mean = prediction.mean(0).dataSync();

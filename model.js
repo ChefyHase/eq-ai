@@ -25,15 +25,32 @@ class Model {
         kernelRegularizer: 'l1l2',
         strides: [2, 1]
       }).apply(reshape);
-      const norm1 = tf.layers.batchNormalization().apply(conv1);
-      const pool = tf.layers.globalMaxPooling2d({ name: 'pool' + n }).apply(norm1);
+      const conv2 = tf.layers.conv2d({
+        filters: 16,
+        kernelSize: [3, 1],
+        padding: 'same',
+        activation: 'relu',
+        kernelInitializer: 'heNormal',
+        kernelRegularizer: 'l1l2',
+        strides: [2, 1]
+      }).apply(conv1);
+      const norm1 = tf.layers.batchNormalization().apply(conv2);
+      const pool1 = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(norm1);
 
+      const flatten = tf.layers.flatten().apply(pool1)
+
+      const dense1 = tf.layers.dense({
+        units: 1024,
+        activation: 'sigmoid',
+        kernelInitializer: 'heNormal',
+        kernelRegularizer: 'l1l2'
+      }).apply(flatten);
       const denseOutput = tf.layers.dense({
         units: 1,
         activation: 'sigmoid',
         kernelInitializer: 'heNormal',
         kernelRegularizer: 'l1l2'
-      }).apply(pool);
+      }).apply(dense1);
 
       outputs.push(denseOutput);
     }

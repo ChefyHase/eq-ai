@@ -98,7 +98,7 @@ class Data {
       for (let i = 0; i < config.batchSize; i++) {
         xBatch.push(...this.sounds[this.batchIndex]);
         labelBatch.push([
-          this.norm(this.filterParams[this.batchIndex].freq, 20, 20000),
+          this.log2lin(this.filterParams[this.batchIndex].freq),
           this.norm(this.filterParams[this.batchIndex].gain, -24.0, 24.0),
           this.norm(this.filterParams[this.batchIndex].q, 0.1, 24.0)
         ]);
@@ -112,7 +112,7 @@ class Data {
     this.loadDataset(this.index);
     this.index++;
     return {
-      xs: this.normTens(tf.tensor(this.dataSets[0], null, 'float32')),
+      xs: tf.tensor(this.dataSets[0], null, 'float32'),
       ys: tf.tensor(this.dataSets[1], null, 'float32')
     }
   }
@@ -146,6 +146,18 @@ class Data {
 
   invNorm(y, min, max) {
     return y * (max - min) + min
+  }
+
+  lin2log(x) {
+    let b = Math.log(20000/20) / (1 - 0);
+    let a = 20 / Math.exp(b * 0);
+    return a * Math.exp(b * x);
+  }
+
+  log2lin(x) {
+    let b = Math.log(20000/20) / (1 - 0);
+    let a = 20 / Math.exp(b * 0);
+    return Math.log(x / a) / b;
   }
 }
 

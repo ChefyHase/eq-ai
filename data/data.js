@@ -14,6 +14,7 @@ class Data {
     this.shortTimeSamples = 1024; // Math.pow(2, 16);
 
     this.sounds = [];
+    this.filteredSounds = [];
     this.filterParams = [];
     this.dataSets = [];
 
@@ -85,7 +86,7 @@ class Data {
         const filterParam = this.randomFilterParam();
         const filtered = peaking.peaking(this.sounds[i], filterParam);
 
-        this.sounds[i] = filtered;
+        this.filteredSounds.push(filtered);
         this.filterParams.push(filterParam);
       }
     }
@@ -94,9 +95,11 @@ class Data {
   makeDataset() {
     for (let n = 0; n < config.trainEpoches; n++) {
       const xBatch = [];
+      const raw = [];
       const labelBatch = [];
       for (let i = 0; i < config.batchSize; i++) {
-        xBatch.push(...this.sounds[this.batchIndex]);
+        xBatch.push(...this.filteredSounds[this.batchIndex]);
+        raw.push(...this.sounds[this.batchIndex]);
         labelBatch.push([
           this.log2lin(this.filterParams[this.batchIndex].freq),
           this.norm(this.filterParams[this.batchIndex].gain, -24.0, 24.0),
@@ -104,7 +107,7 @@ class Data {
         ]);
         this.batchIndex++;
       }
-      this.dataSets.push([xBatch, labelBatch]);
+      this.dataSets.push([xBatch, raw, labelBatch]);
     }
   }
 
@@ -113,7 +116,8 @@ class Data {
     this.index++;
     return {
       xs: tf.tensor(this.dataSets[0], null, 'float32'),
-      ys: tf.tensor(this.dataSets[1], null, 'float32')
+      raw: this.dataSets[1],
+      ys: tf.tensor(this.dataSets[2], null, 'float32')
     }
   }
 
@@ -126,8 +130,9 @@ class Data {
   loadDataset(index) {
     const filePath = config.dataSetPath + index + '.json';
     let json = JSON.parse(fs.readFileSync(filePath));
-    const soundBuffer = _.chunk(json[0], this.shortTimeSamples);
-    this.dataSets = [soundBuffer, json[1]];
+    const xs = _.chunk(json[0], this.shortTimeSamples);
+    const raw = _.chunk(json[1], this.shortTimeSamples);
+    this.dataSets = [xs, raw, json[2]];
   }
 
   disposer(tensors) {
@@ -158,6 +163,17 @@ class Data {
     let b = Math.log(20000/20) / (1 - 0);
     let a = 20 / Math.exp(b * 0);
     return Math.log(x / a) / b;
+  }
+
+  valSplits(x, rate) {
+    const train = [];
+    const val = [];
+
+    tf.unstack(x).forEach((tensor, index) => {
+      if (index < config.batchSize - config.batchSize * rate) train.push(tensor.arraySync());
+      else val.push(tensor.arraySync());
+    });
+    return [tf.tensor(train), tf.tensor(val)];
   }
 }
 

@@ -5,7 +5,7 @@ const config = require('../config.js');
 (async () => {
   const data = new Data();
   await data.separation();
-  data.applyFilter();
+  await data.applyFilter();
   data.makeDataset();
 
   for (let i = 0; i < config.trainEpoches; i++) {

@@ -1,7 +1,7 @@
 module.exports = {
-  batchSize: 1000,
+  batchSize: 284 * 10,
   numSamples: 284,
-  samplesPerSong: 5,
+  samplesPerSong: 10,
   trainEpoches: 1,
   dataSetPath: './data/json/',
   varbose: true

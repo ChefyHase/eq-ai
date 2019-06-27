@@ -24,9 +24,9 @@ class Data {
 
   randomFilterParam() {
     const params = {
-      freq: _.random(20, 20000),
-      q: _.random(0.1, 24.0, true),
-      gain: _.random(-24.0, 24.0, true),
+      freq: this.lin2log(_.random(0, 1, true)),
+      q: _.random(0.1, 24.0),
+      gain: _.random(-24.0, 24.0),
       samplerate: this.samplerate
     }
     return params;
@@ -85,7 +85,6 @@ class Data {
       for (let i = 0; i < this.sounds.length; i++) {
         const filterParam = this.randomFilterParam();
         const filtered = peaking.peaking(this.sounds[i], filterParam);
-
         this.filteredSounds.push(filtered);
         this.filterParams.push(filterParam);
       }
@@ -98,7 +97,7 @@ class Data {
       const raw = [];
       const labelBatch = [];
       for (let i = 0; i < config.batchSize; i++) {
-        xBatch.push(...this.filteredSounds[this.batchIndex]);
+        xBatch.push(...Array(...this.filteredSounds[this.batchIndex]));
         raw.push(...this.sounds[this.batchIndex]);
         labelBatch.push([
           this.log2lin(this.filterParams[this.batchIndex].freq),
@@ -123,7 +122,7 @@ class Data {
 
   async predictBatch(wav) {
     const buffer = await this.separateSound(wav);
-    const ts = this.normTens(tf.tensor(buffer));
+    const ts = tf.tensor(buffer);
     return ts;
   }
 
@@ -150,10 +149,12 @@ class Data {
   }
 
   invNorm(y, min, max) {
+    if (y >= 1) y = 1.0;
     return y * (max - min) + min
   }
 
   lin2log(x) {
+    if (x >= 1) x = 1.0;
     let b = Math.log(20000/20) / (1 - 0);
     let a = 20 / Math.exp(b * 0);
     return a * Math.exp(b * x);

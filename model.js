@@ -3,6 +3,55 @@ const Data = require('./data/data.js');
 const config = require('./config.js');
 const peaking = require('node-peaking');
 const _ = require('lodash');
+const fs = require('fs');
+
+class Sound2Image extends tf.layers.Layer {
+  static className = 'Sound2Image';
+  constructor() {
+    super({});
+  }
+  // In this case, the output is a scalar.
+  computeOutputShape(inputShape) { return [null, 224, 224, 3]; }
+
+  // call() is where we do the computation.
+  call(input, kwargs) {
+    return tf.tidy(() => {
+      const batchSize = input[0].shape[0];
+      input = tf.concat([input[0], input[0], input[0]]);
+      const inputReshaped = tf.image.resizeBilinear(
+        tf.reshape(input, [batchSize, 32, 32, 3]),
+        [224, 224]
+      );
+      return inputReshaped;
+    });
+  }
+
+  // Every layer needs a unique name.
+  getClassName() { return 'Sound2Image'; }
+}
+tf.serialization.registerClass(Sound2Image);
+
+class ImageNet extends tf.layers.Layer {
+  static className = 'ImageNet';
+  constructor(args) {
+    super({});
+    this.model = args;
+  }
+  // In this case, the output is a scalar.
+  computeOutputShape(inputShape) { return [null, 1001]; }
+
+  // call() is where we do the computation.
+  call(input, kwargs) {
+    return tf.tidy(() => {
+      const pred = this.model.predict(input)
+      return pred;
+    });
+  }
+
+  // Every layer needs a unique name.
+  getClassName() { return 'ImageNet'; }
+}
+tf.serialization.registerClass(ImageNet);
 
 class Model {
   constructor(args) {
@@ -10,119 +59,49 @@ class Model {
     this.model = null;
   }
 
-  build(randomSampling) {
-    const filter1 = (randomSampling) ? _.random(19, 27) : 16;
-    const filter2 = (randomSampling) ? _.random(11, 16) : 16;
-    const lambda = (randomSampling) ? _.random(0.34, 0.44) : 0.1;
+  async build(randomSampling) {
+    const lambda = 0.03;
 
     const input = tf.input({ shape: [1024] });
-    const reshape = tf.layers.reshape({ targetShape: [1024, 1, 1] }).apply(input);
+    const imageNetModel = await tf.loadGraphModel(
+      'https://tfhub.dev/google/imagenet/mobilenet_v2_140_224/classification/2',
+      { fromTFHub: true }
+    );
+    const imageNet = new ImageNet(imageNetModel);
+    const sound2Image = new Sound2Image().apply(input);
+    const netOutput = imageNet.apply(sound2Image);
 
-    const convLow = tf.layers.conv2d({
-      filters: filter1,
-      kernelSize: [512, 1],
-      activation: 'linear',
+    const dense1 = tf.layers.dense({
+      units: 5000, 
+      activation: 'relu',
       kernelInitializer: 'heNormal',
-      padding: 'same',
-      kernelRegularizer: tf.regularizers.l2({ l2: lambda }),
-      strides: [1, 1]
-    }).apply(reshape);
-    const convLow2 = tf.layers.conv2d({
-      filters: filter2,
-      kernelSize: [512, 1],
-      activation: 'linear',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(netOutput);
+    const dense2 = tf.layers.dense({
+      units: 1000,
+      activation: 'relu',
       kernelInitializer: 'heNormal',
-      padding: 'same',
-      kernelRegularizer: tf.regularizers.l2({ l2: lambda }),
-      strides: [1, 1]
-    }).apply(convLow);
-    const globalAvePoolLow = tf.layers.globalAveragePooling2d({ name: 'globalAverageLow' }).apply(convLow2);
-    const fcLow1 = tf.layers.dense({ units: 1024, activation: 'relu' }).apply(globalAvePoolLow);
-    const fcLow2 = tf.layers.dense({ units: 1024, activation: 'sigmoid' }).apply(fcLow1);
-    const reshapeLow = tf.layers.reshape({ targetShape: [1024, 1, 1] }).apply(fcLow2);
-    const scaleLow = tf.layers.multiply().apply([convLow2, reshapeLow]);
-    const addLow = tf.layers.add().apply([reshape, scaleLow]);
-    const poolLow = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(addLow);
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense1);
+    const output = tf.layers.dense({ units: 3, activation: 'linear', kernelInitializer: 'heNormal' }).apply(dense2);
 
-    const convMid = tf.layers.conv2d({
-      filters: filter1,
-      kernelSize: [24, 1],
-      activation: 'linear',
-      kernelInitializer: 'heNormal',
-      padding: 'same',
-      kernelRegularizer: tf.regularizers.l2({ l2: lambda }),
-      strides: [1, 1]
-    }).apply(reshape);
-    const convMid2 = tf.layers.conv2d({
-      filters: filter2,
-      kernelSize: [24, 1],
-      activation: 'linear',
-      kernelInitializer: 'heNormal',
-      padding: 'same',
-      kernelRegularizer: tf.regularizers.l2({ l2: lambda }),
-      strides: [1, 1]
-    }).apply(convMid);
-    const globalAvePoolMid = tf.layers.globalAveragePooling2d({ name: 'globalAverageMid' }).apply(convMid2);
-    const fcMid1 = tf.layers.dense({ units: 1024, activation: 'relu' }).apply(globalAvePoolMid);
-    const fcMid2 = tf.layers.dense({ units: 1024, activation: 'sigmoid' }).apply(fcMid1);
-    const reshapeMid = tf.layers.reshape({ targetShape: [1024, 1, 1] }).apply(fcMid2);
-    const scaleMid = tf.layers.multiply().apply([convMid2, reshapeMid]);
-    const addMid = tf.layers.add().apply([reshape, scaleMid]);
-    const poolMid = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(addMid);
+    const model = tf.model({ inputs: input, outputs: output });
 
-    const convHigh = tf.layers.conv2d({
-      filters: filter1,
-      kernelSize: [3, 1],
-      activation: 'linear',
-      kernelInitializer: 'heNormal',
-      padding: 'same',
-      kernelRegularizer: tf.regularizers.l2({ l2: lambda }),
-      strides: [1, 1]
-    }).apply(reshape);
-    const convHigh2 = tf.layers.conv2d({
-      filters: filter2,
-      kernelSize: [3, 1],
-      activation: 'linear',
-      kernelInitializer: 'heNormal',
-      padding: 'same',
-      kernelRegularizer: tf.regularizers.l2({ l2: lambda }),
-      strides: [1, 1]
-    }).apply(convHigh);
-    const globalAvePoolHigh = tf.layers.globalAveragePooling2d({ name: 'globalAverageHigh' }).apply(convHigh2);
-    const fcHigh1 = tf.layers.dense({ units: 1024, activation: 'relu' }).apply(globalAvePoolHigh);
-    const fcHigh2 = tf.layers.dense({ units: 1024, activation: 'sigmoid' }).apply(fcHigh1);
-    const reshapeHigh = tf.layers.reshape({ targetShape: [1024, 1, 1] }).apply(fcHigh2);
-    const scaleHigh = tf.layers.multiply().apply([convHigh2, reshapeHigh]);
-    const addHigh = tf.layers.add().apply([reshape, scaleHigh]);
-    const poolHigh = tf.layers.maxPooling2d({ poolSize: [2, 1] }).apply(addHigh);
-
-    const concat = tf.layers.concatenate().apply([poolLow, poolMid, poolHigh]);
-    const flatten = tf.layers.globalMaxPooling2d({ name: 'flatten' }).apply(concat);
-
-    const denseOutput = tf.layers.dense({
-      units: 3,
-      kernelInitializer: 'heNormal',
-      kernelRegularizer: tf.regularizers.l2({ l2: lambda }),
-      activation: 'sigmoid'
-    }).apply(flatten);
-
-    const model = tf.model({ inputs: input, outputs: denseOutput });
     model.summary();
     this.model = model;
-
-    return { model: model, hyperparams: [filter1, filter2, lambda] };
+    return { model: model, hyperparams: [] };
   }
 
   lossParam(yTrue, yPred) {
     return tf.tidy(() => {
-      // console.log(yTrue.arraySync()[0], yPred.arraySync()[0]);
+      console.log(yTrue.arraySync()[0], yPred.arraySync()[0]);
       let lossParam = this.rootMeanSquaredError(yTrue, yPred);
       return lossParam;
     });
   }
 
   lossSound(x, raw, yTrue, yPred, lossParam) {
-    if (lossParam.mean().dataSync() < 0.05) {
+    if (lossParam.mean().dataSync() < 0.3) {
       return tf.tidy(() => {
         const params = yPred.arraySync();
         const paramsTrue = yTrue.arraySync();
@@ -169,11 +148,11 @@ class Model {
 
     const batchSize = 64;
 
-    const { hyperparams } = this.build();
+    const { hyperparams } = await this.build();
     let trainLoss;
     let valLoss;
 
-    for (let j = 0; j < 300; j++) {
+    for (let j = 0; j < 1000; j++) {
       let { xs, raw, ys } = this.data.nextBatch(j % (config.trainEpoches - 1));
       let [xTrain, xVal] = this.data.valSplits(xs, 0.3);
       let [rawTrain, rawVal] = this.data.valSplits(raw, 0.3);
@@ -196,12 +175,20 @@ class Model {
       await this.model.save('file://./eq-ai');
       console.log(`Score: ` + trainLoss.toFixed(3) + ' / ' + (valLoss).toFixed(3));
 
+      this.data.disposer([xs, ys]);
+      this.data.disposer([xTrain, xVal]);
+      this.data.disposer([ysTrain, ysVal]);
+
+      fs.appendFileSync('./output.csv', `${trainLoss}, ${valLoss}\n`);
+
       await tf.nextFrame();
     }
   }
 
   async predict(wav) {
-    if (this.model === null) this.model = await tf.loadLayersModel(`file://${__dirname}/eq-ai/model.json`);
+    if (this.model === null) this.model = await this.loadModel(`file://${__dirname}/eq-ai/model.json`);
+
+
     const predictBatch = await this.data.predictBatch(wav);
     const prediction = this.model.predict(predictBatch);
     const mean = prediction.mean(0).dataSync();

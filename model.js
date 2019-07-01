@@ -24,18 +24,18 @@ class Model {
 
     const input = tf.input({ shape: [1001] });
     const dense1 = tf.layers.dense({
-      units: 5000,
+      units: 2450,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
     }).apply(input);
     const dense2 = tf.layers.dense({
-      units: 5000,
+      units: 1200,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
     }).apply(dense1);
-    const output = tf.layers.dense({ units: 3, activation: 'linear', kernelInitializer: 'heNormal' }).apply(dense2);
+    const output = tf.layers.dense({ units: 3, activation: 'sigmoid' }).apply(dense2);
 
     const model = tf.model({ inputs: input, outputs: output });
 
@@ -46,7 +46,7 @@ class Model {
 
   lossParam(yTrue, yPred) {
     return tf.tidy(() => {
-      console.log(yTrue.arraySync()[0], yPred.arraySync()[0]);
+      // console.log(yTrue.arraySync()[0], yPred.arraySync()[0]);
       let lossParam = this.rootMeanSquaredError(yTrue, yPred);
       return lossParam;
     });
@@ -90,6 +90,16 @@ class Model {
     });
   }
 
+  async acc(yTrue, yPred, thr) {
+    const numTotal = yTrue.flatten().shape[0];
+    const filter = tf.fill(yTrue.shape, thr);
+    const error = yTrue.sub(yPred).abs();
+    let numCorrect = await tf.whereAsync(error.lessEqual(filter));
+    numCorrect = numCorrect.flatten().shape[0];
+
+    return numCorrect / numTotal;
+  }
+
   rootMeanSquaredError(yTrue, yPred) {
     return tf.square(yTrue.sub(yPred)).mean().sqrt();
   }
@@ -101,6 +111,7 @@ class Model {
     const batchSize = config.batchSize;
     let trainLoss;
     let valLoss;
+    let valAcc;
 
     for (let j = 0; j < 1000; j++) {
       let { xs, raw, ys } = this.data.nextBatch(j % (config.trainEpoches - 1));
@@ -122,14 +133,18 @@ class Model {
       });
       [, , valLoss] = this.loss(xVal, rawVal.arraySync(), ysVal, val);
       valLoss = Number(valLoss.dataSync());
-      await this.model.save('file://./eq-ai');
-      console.log(`Score: ` + trainLoss.toFixed(3) + ' / ' + (valLoss).toFixed(3));
+      valAcc = await this.acc(ysVal, val, 0.1);
+
+      console.log(
+        `Epoch ${j}: trainLoss: ${trainLoss.toFixed(3)} | valLoss: ${valLoss.toFixed(3)} | valAcc: ${valAcc.toFixed(3)}`
+      );
 
       this.data.disposer([xs, ys]);
       this.data.disposer([xTrain, xVal]);
       this.data.disposer([ysTrain, ysVal]);
 
       fs.appendFileSync('./output.csv', `${trainLoss}, ${valLoss}\n`);
+      await this.model.save('file://./eq-ai');
 
       await tf.nextFrame();
     }

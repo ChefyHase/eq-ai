@@ -110,7 +110,8 @@ class Data {
     }
   }
 
-  nextBatch() {
+  nextBatch(index) {
+    if (index) this.index = index;
     this.loadDataset(this.index);
     this.index++;
     return {

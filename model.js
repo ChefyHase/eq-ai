@@ -21,16 +21,18 @@ class Model {
 
   async build(randomSampling) {
     const lambda = 0.03;
+    const unit1 = (randomSampling) ? _.random(2000, 2500) : 500;
+    const unit2 = (randomSampling) ? _.random(700, 2000) : 500;
 
     const input = tf.input({ shape: [1001] });
     const dense1 = tf.layers.dense({
-      units: 5000,
+      units: unit1,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
     }).apply(input);
     const dense2 = tf.layers.dense({
-      units: 5000,
+      units: unit2,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
@@ -41,7 +43,7 @@ class Model {
 
     model.summary();
     this.model = model;
-    return { model: model, hyperparams: [] };
+    return { model: model, hyperparams: [unit1, unit2] };
   }
 
   lossParam(yTrue, yPred) {
@@ -53,7 +55,7 @@ class Model {
   }
 
   lossSound(x, raw, yTrue, yPred, lossParam) {
-    if (lossParam.mean().dataSync() < 0.3) {
+    if (lossParam.mean().dataSync() < 0.1) {
       return tf.tidy(() => {
         const params = yPred.arraySync();
         const paramsTrue = yTrue.arraySync();
@@ -96,42 +98,44 @@ class Model {
 
   async train() {
     await this.init();
-    const { hyperparams } = await this.build();
     const optimizer = tf.train.adam(0.001);
     const batchSize = config.batchSize;
     let trainLoss;
     let valLoss;
 
-    for (let j = 0; j < 1000; j++) {
-      let { xs, raw, ys } = this.data.nextBatch(j % (config.trainEpoches - 1));
-      let [xTrain, xVal] = this.data.valSplits(xs, 0.3);
-      let [rawTrain, rawVal] = this.data.valSplits(raw, 0.3);
-      let [ysTrain, ysVal] = this.data.valSplits(ys, 0.3);
+    for (let n = 0; n < 100; n++) {
+      const { hyperparams } = await this.build(true);
+      console.log(hyperparams);
+      for (let j = 0; j < 20; j++) {
+        let { xs, raw, ys } = this.data.nextBatch(j % (config.trainEpoches - 1));
+        let [xTrain, xVal] = this.data.valSplits(xs, 0.3);
+        let [rawTrain, rawVal] = this.data.valSplits(raw, 0.3);
+        let [ysTrain, ysVal] = this.data.valSplits(ys, 0.3);
 
-      trainLoss = await optimizer.minimize(() => {
-        let pred = this.model.predict(this.featureExt(xTrain), {
+        trainLoss = await optimizer.minimize(() => {
+          let pred = this.model.predict(this.featureExt(xTrain), {
+            batchSize: batchSize
+          });
+          [, , trainLoss] = this.loss(xTrain, rawTrain.arraySync(), ysTrain, pred);
+          return trainLoss;
+        }, true);
+        trainLoss = Number(trainLoss.dataSync());
+
+        let val = this.model.predict(this.featureExt(xVal), {
           batchSize: batchSize
         });
-        [, , trainLoss] = this.loss(xTrain, rawTrain.arraySync(), ysTrain, pred);
-        return trainLoss;
-      }, true);
-      trainLoss = Number(trainLoss.dataSync());
+        [, , valLoss] = this.loss(xVal, rawVal.arraySync(), ysVal, val);
+        valLoss = Number(valLoss.dataSync());
+        await this.model.save('file://./eq-ai');
+        console.log(`Score: ` + trainLoss.toFixed(3) + ' / ' + (valLoss).toFixed(3));
 
-      let val = this.model.predict(this.featureExt(xVal), {
-        batchSize: batchSize
-      });
-      [, , valLoss] = this.loss(xVal, rawVal.arraySync(), ysVal, val);
-      valLoss = Number(valLoss.dataSync());
-      await this.model.save('file://./eq-ai');
-      console.log(`Score: ` + trainLoss.toFixed(3) + ' / ' + (valLoss).toFixed(3));
+        this.data.disposer([xs, ys]);
+        this.data.disposer([xTrain, xVal]);
+        this.data.disposer([ysTrain, ysVal]);
 
-      this.data.disposer([xs, ys]);
-      this.data.disposer([xTrain, xVal]);
-      this.data.disposer([ysTrain, ysVal]);
-
-      fs.appendFileSync('./output.csv', `${trainLoss}, ${valLoss}\n`);
-
-      await tf.nextFrame();
+        await tf.nextFrame();
+      }
+      fs.appendFileSync('./param.csv', `${n}, ${hyperparams[0]}, ${hyperparams[1]}, ${trainLoss}, ${valLoss}\n`);
     }
   }
 

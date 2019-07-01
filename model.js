@@ -5,80 +5,32 @@ const peaking = require('node-peaking');
 const _ = require('lodash');
 const fs = require('fs');
 
-class Sound2Image extends tf.layers.Layer {
-  static className = 'Sound2Image';
-  constructor() {
-    super({});
-  }
-  // In this case, the output is a scalar.
-  computeOutputShape(inputShape) { return [null, 224, 224, 3]; }
-
-  // call() is where we do the computation.
-  call(input, kwargs) {
-    return tf.tidy(() => {
-      const batchSize = input[0].shape[0];
-      input = tf.concat([input[0], input[0], input[0]]);
-      const inputReshaped = tf.image.resizeBilinear(
-        tf.reshape(input, [batchSize, 32, 32, 3]),
-        [224, 224]
-      );
-      return inputReshaped;
-    });
-  }
-
-  // Every layer needs a unique name.
-  getClassName() { return 'Sound2Image'; }
-}
-tf.serialization.registerClass(Sound2Image);
-
-class ImageNet extends tf.layers.Layer {
-  static className = 'ImageNet';
-  constructor(args) {
-    super({});
-    this.model = args;
-  }
-  // In this case, the output is a scalar.
-  computeOutputShape(inputShape) { return [null, 1001]; }
-
-  // call() is where we do the computation.
-  call(input, kwargs) {
-    return tf.tidy(() => {
-      const pred = this.model.predict(input)
-      return pred;
-    });
-  }
-
-  // Every layer needs a unique name.
-  getClassName() { return 'ImageNet'; }
-}
-tf.serialization.registerClass(ImageNet);
-
 class Model {
   constructor(args) {
     this.data = new Data();
     this.model = null;
+    this.imageNet;
+  }
+
+  async init() {
+    this.imageNet = await tf.loadGraphModel(
+      'https://tfhub.dev/google/imagenet/mobilenet_v2_140_224/classification/2',
+      { fromTFHub: true }
+    );
   }
 
   async build(randomSampling) {
     const lambda = 0.03;
 
-    const input = tf.input({ shape: [1024] });
-    const imageNetModel = await tf.loadGraphModel(
-      'https://tfhub.dev/google/imagenet/mobilenet_v2_140_224/classification/2',
-      { fromTFHub: true }
-    );
-    const imageNet = new ImageNet(imageNetModel);
-    const sound2Image = new Sound2Image().apply(input);
-    const netOutput = imageNet.apply(sound2Image);
-
+    const input = tf.input({ shape: [1001] });
     const dense1 = tf.layers.dense({
-      units: 5000, 
+      units: 5000,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
-    }).apply(netOutput);
+    }).apply(input);
     const dense2 = tf.layers.dense({
-      units: 1000,
+      units: 5000,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
@@ -118,8 +70,8 @@ class Model {
         }
         const predFiltered = tf.tensor(buffers);
         // Error to Signal Ratio
-        const lossSound = tf.div(tf.abs(raw.sub(predFiltered)).square().sum(), tf.abs(raw).square().sum());
-        // const lossSound = tf.metrics.meanSquaredError(x, predFiltered)//.div(tf.scalar(2));
+        // const lossSound = tf.div(tf.abs(raw.sub(predFiltered)).square().sum(), tf.abs(raw).square().sum());
+        const lossSound = tf.metrics.meanSquaredError(x, predFiltered)//.div(tf.scalar(2));
         return lossSound;
       });
     }
@@ -143,12 +95,10 @@ class Model {
   }
 
   async train() {
-    // this.model = await tf.loadLayersModel('file://./eq-ai-1/model.json');
-    const optimizer = tf.train.adam(0.001);
-
-    const batchSize = 64;
-
+    await this.init();
     const { hyperparams } = await this.build();
+    const optimizer = tf.train.adam(0.001);
+    const batchSize = config.batchSize;
     let trainLoss;
     let valLoss;
 
@@ -159,7 +109,7 @@ class Model {
       let [ysTrain, ysVal] = this.data.valSplits(ys, 0.3);
 
       trainLoss = await optimizer.minimize(() => {
-        let pred = this.model.predict(xTrain, {
+        let pred = this.model.predict(this.featureExt(xTrain), {
           batchSize: batchSize
         });
         [, , trainLoss] = this.loss(xTrain, rawTrain.arraySync(), ysTrain, pred);
@@ -167,7 +117,7 @@ class Model {
       }, true);
       trainLoss = Number(trainLoss.dataSync());
 
-      let val = this.model.predict(xVal, {
+      let val = this.model.predict(this.featureExt(xVal), {
         batchSize: batchSize
       });
       [, , valLoss] = this.loss(xVal, rawVal.arraySync(), ysVal, val);
@@ -186,17 +136,32 @@ class Model {
   }
 
   async predict(wav) {
-    if (this.model === null) this.model = await this.loadModel(`file://${__dirname}/eq-ai/model.json`);
-
+    if (this.model === null) {
+      await this.init();
+      this.model = await tf.loadLayersModel(`file://${__dirname}/eq-ai/model.json`)
+    };
 
     const predictBatch = await this.data.predictBatch(wav);
-    const prediction = this.model.predict(predictBatch);
+    const prediction = this.model.predict(this.featureExt(predictBatch));
     const mean = prediction.mean(0).dataSync();
     const freq = this.data.lin2log(mean[0]);
     const gain = this.data.invNorm(mean[1], -24.0, 24.0);
     const q = this.data.invNorm(mean[2], 0.1, 24.0);
 
     return { freq, gain, q };
+  }
+
+  featureExt(x) {
+    return tf.tidy(() => {
+      const batchSize = x.shape[0];
+      x = tf.concat([x, x, x]);
+      const inputReshaped = tf.image.resizeBilinear(
+        tf.reshape(x, [batchSize, 32, 32, 3]),
+        [224, 224]
+      );
+      const pred = this.imageNet.predict(inputReshaped);
+      return pred;
+    })
   }
 }
 

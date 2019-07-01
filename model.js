@@ -143,7 +143,7 @@ class Model {
       this.data.disposer([xTrain, xVal]);
       this.data.disposer([ysTrain, ysVal]);
 
-      fs.appendFileSync('./output.csv', `${trainLoss}, ${valLoss}\n`);
+      fs.appendFileSync('./output.csv', `${j}, ${trainLoss}, ${valLoss}, ${valAcc}\n`);
       await this.model.save('file://./eq-ai');
 
       await tf.nextFrame();

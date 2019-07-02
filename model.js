@@ -29,19 +29,27 @@ class Model {
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
     }).apply(input);
+    const norm1 = tf.layers.batchNormalization().apply(dense1);
     const dense2 = tf.layers.dense({
       units: 1200,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
-    }).apply(dense1);
-    const output = tf.layers.dense({ units: 3, activation: 'sigmoid' }).apply(dense2);
+    }).apply(norm1);
+    const norm2 = tf.layers.batchNormalization().apply(dense2);
+    const dense3 = tf.layers.dense({
+      units: 500,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(norm2);
+    const output = tf.layers.dense({ units: 3, activation: 'linear' }).apply(dense3);
 
     const model = tf.model({ inputs: input, outputs: output });
 
-    model.summary();
+    // model.summary();
     this.model = model;
-    return { model: model, hyperparams: [] };
+    return model;
   }
 
   lossParam(yTrue, yPred) {
@@ -53,7 +61,7 @@ class Model {
   }
 
   lossSound(x, raw, yTrue, yPred, lossParam) {
-    if (lossParam.mean().dataSync() < 0.3) {
+    if (lossParam.mean().dataSync() < 0.0) {
       return tf.tidy(() => {
         const params = yPred.arraySync();
         const paramsTrue = yTrue.arraySync();
@@ -106,45 +114,52 @@ class Model {
 
   async train() {
     await this.init();
-    const { hyperparams } = await this.build();
-    const optimizer = tf.train.adam(0.001);
-    const batchSize = config.batchSize;
-    let trainLoss;
-    let valLoss;
-    let valAcc;
 
-    for (let j = 0; j < 1000; j++) {
+    const numModels = 1;
+    const models = [];
+    for (let n = 0; n < numModels; n++) models.push(await this.build());
+    const optimizer = tf.train.adam(0.0001);
+    const batchSize = config.batchSize;
+
+    for (let j = 0; j < 100; j++) {
       let { xs, raw, ys } = this.data.nextBatch(j % (config.trainEpoches - 1));
       let [xTrain, xVal] = this.data.valSplits(xs, 0.3);
       let [rawTrain, rawVal] = this.data.valSplits(raw, 0.3);
       let [ysTrain, ysVal] = this.data.valSplits(ys, 0.3);
+      let trainLoss;
+      let valLoss;
+      let vals = [];
 
-      trainLoss = await optimizer.minimize(() => {
-        let pred = this.model.predict(this.featureExt(xTrain), {
+      for (let model of models) {
+        trainLoss = await optimizer.minimize(() => {
+          let pred = model.predict(this.featureExt(xTrain), {
+            batchSize: batchSize
+          });
+          [, , trainLoss] = this.loss(xTrain, rawTrain.arraySync(), ysTrain, pred);
+          return trainLoss;
+        }, true);
+        trainLoss = Number(trainLoss.dataSync());
+
+        let val = model.predict(this.featureExt(xVal), {
           batchSize: batchSize
         });
-        [, , trainLoss] = this.loss(xTrain, rawTrain.arraySync(), ysTrain, pred);
-        return trainLoss;
-      }, true);
-      trainLoss = Number(trainLoss.dataSync());
+        vals.push(val);
+      }
 
-      let val = this.model.predict(this.featureExt(xVal), {
-        batchSize: batchSize
-      });
-      [, , valLoss] = this.loss(xVal, rawVal.arraySync(), ysVal, val);
+      let valMean = this.mean(vals);
+      [, , valLoss] = this.loss(xVal, rawVal.arraySync(), ysVal, valMean);
       valLoss = Number(valLoss.dataSync());
-      valAcc = await this.acc(ysVal, val, 0.1);
-
+      let valAcc = await this.acc(ysVal, valMean, 0.1);
       console.log(
         `Epoch ${j}: trainLoss: ${trainLoss.toFixed(3)} | valLoss: ${valLoss.toFixed(3)} | valAcc: ${valAcc.toFixed(3)}`
       );
 
-      this.data.disposer([xs, ys]);
+      this.data.disposer([xs, ys, valMean]);
       this.data.disposer([xTrain, xVal]);
       this.data.disposer([ysTrain, ysVal]);
 
       fs.appendFileSync('./output.csv', `${j}, ${trainLoss}, ${valLoss}, ${valAcc}\n`);
-      await this.model.save('file://./eq-ai');
+      for (let n = 0; n < numModels; n++) await models[n].save('file://./eq-ai/model' + n);
 
       await tf.nextFrame();
     }
@@ -177,6 +192,16 @@ class Model {
       const pred = this.imageNet.predict(inputReshaped);
       return pred;
     })
+  }
+
+  mean(tensors) {
+    return tf.tidy(() => {
+      let total = tf.zeros(tensors[0].shape);
+      tensors.forEach((tensor) => {
+        total = total.add(tensor);
+      });
+      return total.div(tf.scalar(tensors.length));
+    });
   }
 }
 

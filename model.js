@@ -43,7 +43,7 @@ class Model {
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
     }).apply(norm2);
-    const output = tf.layers.dense({ units: 3, activation: 'linear' }).apply(dense3);
+    const output = tf.layers.dense({ units: 1, activation: 'linear' }).apply(dense3);
 
     const model = tf.model({ inputs: input, outputs: output });
 

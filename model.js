@@ -20,30 +20,201 @@ class Model {
   }
 
   async build(randomSampling) {
-    const lambda = 0.03;
+    const lambda = 0.00;
 
     const input = tf.input({ shape: [1001] });
     const dense1 = tf.layers.dense({
-      units: 2450,
+      units: 5000,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
     }).apply(input);
-    const norm1 = tf.layers.batchNormalization().apply(dense1);
     const dense2 = tf.layers.dense({
-      units: 1200,
+      units: 5000,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
-    }).apply(norm1);
-    const norm2 = tf.layers.batchNormalization().apply(dense2);
+    }).apply(dense1);
     const dense3 = tf.layers.dense({
-      units: 500,
+      units: 5000,
       activation: 'relu',
       kernelInitializer: 'heNormal',
       kernelRegularizer: tf.regularizers.l2({ l2: lambda })
-    }).apply(norm2);
-    const output = tf.layers.dense({ units: 1, activation: 'linear' }).apply(dense3);
+    }).apply(dense2);
+    const node1 = tf.layers.add().apply([dense1, dense3]);
+    const dense4 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(node1);
+    const dense5 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense4);
+    const dense6 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense5);
+    const node2 = tf.layers.add().apply([dense4, dense6]);
+    const dense7 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(node2);
+    const dense8 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense7);
+    const dense9 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense8);
+    const node3 = tf.layers.add().apply([dense7, dense9]);
+    const dense10 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(node3);
+    const dense11 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense10);
+    const dense12 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense11);
+    const node4 = tf.layers.add().apply([dense10, dense12]);
+    const dense13 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(node4);
+    const dense14 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense13);
+    const dense15 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense14);
+    const node5 = tf.layers.add().apply([dense13, dense15]);
+    const dense16 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(node5);
+    const dense17 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense16);
+    const dense18 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense17);
+    const node6 = tf.layers.add().apply([dense16, dense18]);
+    const dense19 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(node6);
+    const dense20 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense19);
+    const dense21 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense20);
+    const node7 = tf.layers.add().apply([dense19, dense21]);
+    const dense22 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(node7);
+    const dense23 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense22);
+    const dense24 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense23);
+    const node8 = tf.layers.add().apply([dense22, dense24]);
+    const dense25 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(node8);
+    const dense26 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense25);
+    const dense27 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense26);
+    const node9 = tf.layers.add().apply([dense25, dense27]);
+    const dense28 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(node9);
+    const dense29 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense28);
+    const dense30 = tf.layers.dense({
+      units: 5000,
+      activation: 'relu',
+      kernelInitializer: 'heNormal',
+      kernelRegularizer: tf.regularizers.l2({ l2: lambda })
+    }).apply(dense29);
+    const node10 = tf.layers.add().apply([dense28, dense30]);
+
+    const output = tf.layers.dense({ units: 1, activation: 'linear' }).apply(node10);
 
     const model = tf.model({ inputs: input, outputs: output });
 
@@ -98,12 +269,32 @@ class Model {
     });
   }
 
+  r2(yTrue, yPred) {
+    return tf.tidy(() => {
+      const num = tf.square(yTrue.sub(yPred)).sum();
+      const den = tf.square(yTrue.sub(yTrue.mean())).sum();
+      const r2 = tf.scalar(1).sub(num.div(den));
+      return r2.dataSync();
+    });
+  }
+
+  rnm(yTrue, yPred) {
+    // Good value is 1.253.
+    return tf.tidy(() => {
+      const rmse = this.rootMeanSquaredError(yTrue, yPred);
+      const mse = tf.metrics.meanSquaredError(yTrue, yPred);
+      const rnm = rmse.div(mse).mean();
+      return rnm.dataSync();
+    });
+  }
+
   async acc(yTrue, yPred, thr) {
     const numTotal = yTrue.flatten().shape[0];
     const filter = tf.fill(yTrue.shape, thr);
     const error = yTrue.sub(yPred).abs();
-    let numCorrect = await tf.whereAsync(error.lessEqual(filter));
-    numCorrect = numCorrect.flatten().shape[0];
+    const filtered = error.lessEqual(filter);
+    let numCorrect = await tf.whereAsync(filtered);
+    numCorrect = numCorrect.shape[0];
 
     return numCorrect / numTotal;
   }
@@ -112,20 +303,22 @@ class Model {
     return tf.square(yTrue.sub(yPred)).mean().sqrt();
   }
 
-  async train() {
+  async train(args) {
     await this.init();
 
     const numModels = 1;
     const models = [];
     for (let n = 0; n < numModels; n++) models.push(await this.build());
-    const optimizer = tf.train.adam(0.0001);
+    const optimizer = tf.train.adam(0.001);
     const batchSize = config.batchSize;
 
-    for (let j = 0; j < 100; j++) {
+    for (let j = 0; j < args.iterations; j++) {
       let { xs, raw, ys } = this.data.nextBatch(j % (config.trainEpoches - 1));
       let [xTrain, xVal] = this.data.valSplits(xs, 0.3);
       let [rawTrain, rawVal] = this.data.valSplits(raw, 0.3);
       let [ysTrain, ysVal] = this.data.valSplits(ys, 0.3);
+      let splitedTrain = ysTrain.split([1, 1, 1], 1);
+      let splitedVal = ysVal.split([1, 1, 1], 1);
       let trainLoss;
       let valLoss;
       let vals = [];
@@ -135,31 +328,38 @@ class Model {
           let pred = model.predict(this.featureExt(xTrain), {
             batchSize: batchSize
           });
-          [, , trainLoss] = this.loss(xTrain, rawTrain.arraySync(), ysTrain, pred);
+          [, , trainLoss] = this.loss(xTrain, rawTrain.arraySync(), splitedTrain[args.model], pred);
           return trainLoss;
         }, true);
         trainLoss = Number(trainLoss.dataSync());
 
         let val = model.predict(this.featureExt(xVal), {
-          batchSize: batchSize
+          batchSize: Math.ceil(batchSize * 0.3)
         });
         vals.push(val);
       }
 
       let valMean = this.mean(vals);
-      [, , valLoss] = this.loss(xVal, rawVal.arraySync(), ysVal, valMean);
+      [, , valLoss] = this.loss(xVal, rawVal.arraySync(), splitedVal[args.model], valMean);
       valLoss = Number(valLoss.dataSync());
-      let valAcc = await this.acc(ysVal, valMean, 0.1);
+      let valAcc = await this.acc(splitedVal[args.model], valMean, 0.3);
       console.log(
         `Epoch ${j}: trainLoss: ${trainLoss.toFixed(3)} | valLoss: ${valLoss.toFixed(3)} | valAcc: ${valAcc.toFixed(3)}`
       );
+
+      let r2 = this.r2(xVal, valMean);
+      let rnm = this.rnm(xVal, valMean);
+
+      console.log(`R2: ${r2} | RMSE/MSE: ${rnm}`);
 
       this.data.disposer([xs, ys, valMean]);
       this.data.disposer([xTrain, xVal]);
       this.data.disposer([ysTrain, ysVal]);
 
-      fs.appendFileSync('./output.csv', `${j}, ${trainLoss}, ${valLoss}, ${valAcc}\n`);
-      for (let n = 0; n < numModels; n++) await models[n].save('file://./eq-ai/model' + n);
+      fs.appendFileSync(`./${args.modelName}Log.csv`, `${j}, ${trainLoss}, ${valLoss}, ${valAcc}\n`);
+      if (args.save) {
+        for (let n = 0; n < numModels; n++) await models[n].save(`file://./eq-ai/models/${args.modelName}/model${n}`);
+      }
 
       await tf.nextFrame();
     }
@@ -196,9 +396,8 @@ class Model {
 
   mean(tensors) {
     return tf.tidy(() => {
-      let total = tf.zeros(tensors[0].shape);
-      tensors.forEach((tensor) => {
-        total = total.add(tensor);
+      const total = tensors.reduce((acc, cur) => {
+        return acc.add(cur);
       });
       return total.div(tf.scalar(tensors.length));
     });

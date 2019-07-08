@@ -1,6 +1,6 @@
 const Data = require('./data/data.js');
 const model = require('./model.js');
-const tf = require('@tensorflow/tfjs-node-gpu');
+const tf = require('@tensorflow/tfjs-node');
 
 (async ()=> {
   // await model.train({ modelName: 'freq', model: 0, iterations: 100, save: true });

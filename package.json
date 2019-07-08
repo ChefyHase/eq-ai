@@ -16,7 +16,7 @@
   "author": "ChefyHase <chefyhase@gmail.com> (http://chefyhase.example.com)",
   "license": "ISC",
   "dependencies": {
-    "@tensorflow/tfjs-node-gpu": "latest",
+    "@tensorflow/tfjs-node": "latest",
     "jest": "^24.8.0",
     "lodash": "^4.17.11",
     "node-peaking": "github:ChefyHase/node-peaking",

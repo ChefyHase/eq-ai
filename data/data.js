@@ -3,7 +3,7 @@ const decoder = require('wav-decoder');
 const peaking = require('node-peaking');
 const path = require('path');
 const fs = require('fs');
-const tf = require('@tensorflow/tfjs-node-gpu');
+const tf = require('@tensorflow/tfjs-node');
 const _ = require('lodash');
 const config = require('../config');
 

@@ -1,4 +1,4 @@
-const tf = require('@tensorflow/tfjs-node-gpu');
+const tf = require('@tensorflow/tfjs-node');
 const Data = require('./data/data.js');
 const config = require('./config.js');
 const peaking = require('node-peaking');
